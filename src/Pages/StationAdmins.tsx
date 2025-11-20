@@ -121,16 +121,20 @@ const handleStationUpdated = (updatedStation:StationAdmin) => {
     (stationAdmin) =>
        stationAdmin.FullName.toLowerCase().includes(searchText.toLowerCase()) 
      );
-     const fetchStationadmins = async () => {
-        try {
-          const res = await axios.get("http://localhost:5000/stationadmins");
-          setStationAdmin(res.data);
-        } catch (err) {
-          console.error("Failed to fetch stations:", err);
-        }
-      };
+     const fetchStationAdmins = async () => {
+    try {
+      // ✅ Call filtered route for logged-in station admin
+      const token = localStorage.getItem("token");
+      const res = await axios.get("http://localhost:5000/stationAdmins", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setStationAdmin(res.data);
+    } catch (err) {
+      console.error("Failed to fetch stations:", err);
+    }
+  };
    useEffect(() => {
-      fetchStationadmins ();
+      fetchStationAdmins ();
     }, []);
 return(
     
@@ -148,7 +152,7 @@ return(
     onClick={showCreateStationAdmin}
     >Create Station Admin
     </Button>
-    {IsCreateStationAdminOpen && <CreateStationAdmin isModalOpen={IsCreateStationAdminOpen} handleCancel={closeCreateStationAdmin}  onStationAdminCreated={fetchStationadmins}/>}
+    {IsCreateStationAdminOpen && <CreateStationAdmin isModalOpen={IsCreateStationAdminOpen} handleCancel={closeCreateStationAdmin}  onStationAdminCreated={fetchStationAdmins}/>}
    </div>
      <div>
     <Table

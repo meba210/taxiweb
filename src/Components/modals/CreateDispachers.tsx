@@ -2,41 +2,42 @@ import {  Button, Input, message, Modal, Select,  } from "antd";
 import axios from "axios";
 import { useEffect, useState } from "react";
 
-type CreateStationAdminProps = {
+type CreateDispachersProps = {
    isModalOpen: boolean;
   handleCancel: () => void;
-   onStationAdminCreated?: () => void;
+   onDispachersCreated?: () => void;
 };
-type Station = {
+type Routes = {
   id:number,
-  StationName: string;
+ StartTerminal: string;
+ EndTerminal:string;
 };
-const CreateStationAdmin:  React.FC <CreateStationAdminProps>= ({isModalOpen, handleCancel,onStationAdminCreated}) => {
+const CreateDispachers:  React.FC <CreateDispachersProps>= ({isModalOpen, handleCancel,onDispachersCreated}) => {
      
     const [FullName, setFullName] = useState("");
       const [PhoneNumber, setPhoneNumber] = useState("");
       const [Email, setEmail] = useState("");
       const [UserName, setUserName] = useState("");
-    const [stations, setStations] = useState<Station[]>([]);
+    const [routes, setRoutes] = useState<Routes[]>([]);
       const [loading, setLoading] = useState(false);
-      const [selectedStation, setSelectedStation] = useState<number | undefined>();
+      const [selectedRoute, setselectedRoute] = useState<number | undefined>();
 
 
        useEffect(() => {
-    const fetchStations = async () => {
+    const fetchRoutes = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/stations");
-        setStations(res.data);
+        const res = await axios.get("http://localhost:5000/routes");
+        setRoutes(res.data);
       } catch (err) {
         console.error("Failed to fetch stations:", err);
       }
     };
 
-    fetchStations();
+    fetchRoutes();
   }, []);
 
         const handleCreate = async () => {
-    if (!FullName || !Email || !PhoneNumber || !UserName || !selectedStation) {
+    if (!FullName || !Email || !PhoneNumber || !UserName || !selectedRoute) {
       message.warning("Please fill in all fields");
       return;
     }
@@ -44,17 +45,17 @@ const CreateStationAdmin:  React.FC <CreateStationAdminProps>= ({isModalOpen, ha
     try {
       setLoading(true);
       const res = await axios.post(
-        "http://localhost:5000/stationadmins",
-        { FullName, Email, PhoneNumber,UserName,selectedStation,role_id: 2},
+        "http://localhost:5000/dispachers",
+        { FullName, Email, PhoneNumber,UserName,selectedRoute,role_id: 3},
         { withCredentials: true }
       );
 
-     alert(res.data.message || "✅ Station created successfully!");
+     alert(res.data.message || "✅ Dispacher created successfully!");
       handleCancel(); 
-      onStationAdminCreated?.(); // refresh data
+      onDispachersCreated?.(); // refresh data
     } catch (err: any) {
       console.error(err);
-       alert(err.response?.data?.message || "Failed to create station");
+       alert(err.response?.data?.message || "Failed to create Dispacher");
     } finally {
       setLoading(false);
     }
@@ -79,10 +80,11 @@ return(
            <Input placeholder="Insert username"
            onChange={(e) => setUserName(e.target.value)}
            />
-         <Select placeholder="select station"
-           onChange={(value) => setSelectedStation(value)}
-              value={selectedStation}
-         options={stations.map((s) => ({ label: s.StationName, value: s.StationName }))}
+         <Select placeholder="select Route"
+           onChange={(value) => setselectedRoute(value)}
+              value={selectedRoute}
+         options={routes.map((r) => ({
+    label: `${r.StartTerminal} → ${r.EndTerminal}`,  value: `${r.StartTerminal} → ${r.EndTerminal}`,  }))}
          />
           <Button
           type="primary"
@@ -90,10 +92,10 @@ return(
           onClick={handleCreate}
           className="bg-blue-500 hover:bg-blue-600 w-full rounded-md"
         >
-          Create Admin
+          Create Dispacher
         </Button>
     </div>
 </Modal>
 );
 
-}; export default CreateStationAdmin
+}; export default CreateDispachers
