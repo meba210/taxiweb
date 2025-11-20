@@ -22,14 +22,19 @@ const CreateDispachers:  React.FC <CreateDispachersProps>= ({isModalOpen, handle
       const [loading, setLoading] = useState(false);
       const [selectedRoute, setselectedRoute] = useState<number | undefined>();
 
-
+const token = localStorage.getItem("token");
+  if (!token) console.warn("No token found! Login required.");
        useEffect(() => {
     const fetchRoutes = async () => {
+      if (!token) return;
       try {
-        const res = await axios.get("http://localhost:5000/routes");
+         const res = await axios.get("http://localhost:5000/routes", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
         setRoutes(res.data);
-      } catch (err) {
+      } catch (err:any) {
         console.error("Failed to fetch stations:", err);
+         message.error(err.response?.data?.message || "Failed to fetch routes");
       }
     };
 
@@ -42,12 +47,18 @@ const CreateDispachers:  React.FC <CreateDispachersProps>= ({isModalOpen, handle
       return;
     }
 
+      const token = localStorage.getItem("token");
+    if (!token) {
+      message.error("No token found. Please login again.");
+      return;
+    }
+
     try {
       setLoading(true);
       const res = await axios.post(
         "http://localhost:5000/dispachers",
         { FullName, Email, PhoneNumber,UserName,selectedRoute,role_id: 3},
-        { withCredentials: true }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
      alert(res.data.message || "✅ Dispacher created successfully!");
