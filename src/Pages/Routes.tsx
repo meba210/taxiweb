@@ -117,7 +117,7 @@ export default function Routess() {
           className="pl-10 rounded-2xl w-[200px] h-11"
           prefix={<CiSearch className="text-gray-400" />}
         />
-        <Button onClick={showCreateRoutes}>Create New Routes</Button>
+        <Button onClick={showCreateRoutes}>Create New Route</Button>
         {IsCreateRoutesOpen && (
           <CreateRoutes
             isModalOpen={IsCreateRoutesOpen}
