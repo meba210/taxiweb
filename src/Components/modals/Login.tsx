@@ -23,11 +23,12 @@ const Login:  React.FC<LoginPageProps> = ({ isModalOpen, handleCancel}) => {
       const res = await axios.post(
         "http://localhost:5000/auth/login",
         values,
-        { withCredentials: true }
+        
       );
     console.log("✅ Login response:", res.data);
+       
       message.success("✅ Login successful");
-
+ localStorage.setItem("token", res.data.token);
       const role = res.data.role;
 
       if (role === "admin") navigate("/admin");

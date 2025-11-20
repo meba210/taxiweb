@@ -82,7 +82,7 @@ return(
          <Select placeholder="select station"
            onChange={(value) => setSelectedStation(value)}
               value={selectedStation}
-         options={stations.map((s) => ({ label: s.StationName, value: s.StationName }))}
+         options={stations.map((s) => ({ label: s.StationName,value: s.id, }))}
          />
           <Button
           type="primary"
