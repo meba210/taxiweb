@@ -20,7 +20,8 @@ const CreateDispachers:  React.FC <CreateDispachersProps>= ({isModalOpen, handle
       const [UserName, setUserName] = useState("");
     const [routes, setRoutes] = useState<Routes[]>([]);
       const [loading, setLoading] = useState(false);
-      const [selectedRoute, setselectedRoute] = useState<number | undefined>();
+     const [selectedRoute, setselectedRoute] = useState<string | undefined>();
+
 
 const token = localStorage.getItem("token");
   if (!token) console.warn("No token found! Login required.");
@@ -57,7 +58,7 @@ const token = localStorage.getItem("token");
       setLoading(true);
       const res = await axios.post(
         "http://localhost:5000/dispachers",
-        { FullName, Email, PhoneNumber,UserName,selectedRoute,role_id: 3},
+        { FullName, Email, PhoneNumber,UserName, Routes: selectedRoute,role_id: 3},
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -91,12 +92,16 @@ return(
            <Input placeholder="Insert username"
            onChange={(e) => setUserName(e.target.value)}
            />
-         <Select placeholder="select Route"
-           onChange={(value) => setselectedRoute(value)}
-              value={selectedRoute}
-         options={routes.map((r) => ({
-    label: `${r.StartTerminal} → ${r.EndTerminal}`,  value: `${r.StartTerminal} → ${r.EndTerminal}`,  }))}
-         />
+        <Select
+  placeholder="Select Route"
+  value={selectedRoute}
+  onChange={(value) => setselectedRoute(value)}
+  options={routes.map((r) => ({
+    label: `${r.StartTerminal} → ${r.EndTerminal}`,
+    value: `${r.StartTerminal} → ${r.EndTerminal}`, 
+  }))}
+/>
+
           <Button
           type="primary"
           loading={loading}

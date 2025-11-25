@@ -84,11 +84,7 @@ const token = localStorage.getItem("token");
 
     try {
 
-      const routeObj = routes.find((r) => r.id === Number(selectedRoute));
-
-const Route = routeObj
-  ? `${routeObj.StartTerminal} → ${routeObj.EndTerminal}`
-  : selectedRoute;
+      
 
       setLoading(true);
       const res = await axios.put(`http://localhost:5000/dispachers/${Dispacher?.id}`, {
@@ -96,17 +92,21 @@ const Route = routeObj
          Email,
          PhoneNumber,
          UserName,
-            Routes: Route,
+            Routes:selectedRoute,
       },
     {
           headers: { Authorization: `Bearer ${token}` },
         }
     );
     
+//     const routeObj = routes.find((r) => r.id === Number(selectedRoute));
 
+// const Route = routeObj
+//   ? `${routeObj.StartTerminal} → ${routeObj.EndTerminal}`
+//   : selectedRoute;
 
       message.success(res.data.message || "✅ Station updated!");
-      onUpdated({ ...Dispacher!, FullName: FullName, Email: Email, PhoneNumber: PhoneNumber, UserName: UserName,Routes: Route,});
+      onUpdated({ ...Dispacher!, FullName: FullName, Email: Email, PhoneNumber: PhoneNumber, UserName: UserName,Routes: selectedRoute,});
       handleCancel();
     } catch (err) {
       console.error(err);
@@ -127,7 +127,7 @@ const Route = routeObj
            onChange={(value) => setSelectedRoute(value)}
               value={selectedRoute}
          options={routes.map((r) => ({
-    label: `${r.StartTerminal} → ${r.EndTerminal}`,  value: r.id}))}
+    label: `${r.StartTerminal} → ${r.EndTerminal}`,  value: `${r.StartTerminal} → ${r.EndTerminal}`}))}
          />
         <Button type="primary" loading={loading} onClick={handleUpdate} className="w-full">
           Save Changes

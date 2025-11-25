@@ -46,8 +46,13 @@ export default function TaxAssignment() {
   );
 
   const fetchTaxiAssignment = async () => {
+    
+      const token = localStorage.getItem("token");
+  if (!token) console.warn("No token found! Login required.");
+    if (!token) return;
     try {
-      const res = await axios.get("http://localhost:5000/taxiAssignment");
+      const res = await axios.get("http://localhost:5000/taxiAssignment",
+   {headers: { Authorization: `Bearer ${token}` }})
       setRouteTaxiList(res.data);
     } catch (err) {
       console.error("Failed to fetch taxi assignments:", err);
