@@ -77,6 +77,7 @@ export default function AssignTaxiModal({
       const res = await axios.post("http://localhost:5000/assignTaxis", {
         taxi_ids: values.taxi_ids,
         to_route: selectedRoute,
+          from_route: routeName, 
       },
       {
         headers: { Authorization: `Bearer ${token}` },
