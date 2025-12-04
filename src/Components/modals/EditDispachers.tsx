@@ -40,11 +40,19 @@ const EditDispachersModal: React.FC<EditDispachersModalProps> = ({
 
  
     const fetchDispachers= async () => {
+ const token = localStorage.getItem("token");
+      if (!token) {
+      message.error("No token found. Please login again.");
+      return;
+    }
       try {
-        const res = await axios.get("http://localhost:5000/routes");
+         const res = await axios.get("http://localhost:5000/routes", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
         setRoutes(res.data);
-      } catch (err) {
+      } catch (err:any) {
         console.error("Failed to fetch routes:", err);
+         message.error(err.response?.data?.message || "Failed to fetch routes");
       }
     };
      useEffect(() => {
@@ -68,15 +76,31 @@ const EditDispachersModal: React.FC<EditDispachersModalProps> = ({
       return;
     }
 
+const token = localStorage.getItem("token");
+    if (!token) {
+      message.error("No token found. Please login again.");
+      return;
+    }
+
     try {
+
+      
+
       setLoading(true);
       const res = await axios.put(`http://localhost:5000/dispachers/${Dispacher?.id}`, {
         FullName,
          Email,
          PhoneNumber,
          UserName,
-            Routes: selectedRoute,
-      });
+            Routes:selectedRoute,
+      },
+    {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+    );
+    
+
+
       message.success(res.data.message || "✅ Station updated!");
       onUpdated({ ...Dispacher!, FullName: FullName, Email: Email, PhoneNumber: PhoneNumber, UserName: UserName,Routes: selectedRoute,});
       handleCancel();
@@ -99,7 +123,7 @@ const EditDispachersModal: React.FC<EditDispachersModalProps> = ({
            onChange={(value) => setSelectedRoute(value)}
               value={selectedRoute}
          options={routes.map((r) => ({
-    label: `${r.StartTerminal} → ${r.EndTerminal}`,  value: `${r.StartTerminal} → ${r.EndTerminal}`,  }))}
+    label: `${r.StartTerminal} → ${r.EndTerminal}`,  value: `${r.StartTerminal} → ${r.EndTerminal}`}))}
          />
         <Button type="primary" loading={loading} onClick={handleUpdate} className="w-full">
           Save Changes

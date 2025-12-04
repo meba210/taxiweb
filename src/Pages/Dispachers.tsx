@@ -1,4 +1,4 @@
-import { Button, Input, Table } from "antd";
+import { Button, Input, message, Table } from "antd";
 import { useEffect, useState } from "react";
 import { CiSearch } from "react-icons/ci";
 import { RiDeleteBin6Line } from "react-icons/ri";
@@ -34,19 +34,22 @@ export default function Dispachers () {
   };
   const handleDelete = async (id: number) => {
   if (!confirm("Are you sure you want to delete this dispacher?")) return;
+   if (!token) return;
 
   try {
-    await axios.delete(`http://localhost:5000/dispachers/${id}`);
-    setDispacher ((prev) => prev.filter((s) => s.id !== id));
-    alert("✅ Dispacher deleted successfully");
-  } catch (err) {
-    console.error(err);
-    alert("Failed to delete station");
-  }
-};
+    const res = await axios.delete(`http://localhost:5000/dispachers/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+     message.success(res.data.message || "Route deleted");
+      fetchDispachers(); // Refresh routes
+    } catch (err: any) {
+      console.error("Failed to delete route:", err.response?.data || err);
+      message.error(err.response?.data?.message || "Failed to delete route");
+    }
+  };
 
-const handleEdit = (stationadmin: Dispacher) => {
- setEditingDispachers(stationadmin);
+const handleEdit = (dispacher: Dispacher) => {
+ setEditingDispachers(dispacher);
   setIsEditModalOpen(true);
 };
 
@@ -54,9 +57,9 @@ const closeEditModal = () => {
   setIsEditModalOpen(false);
     setEditingDispachers(null);
 };
-const handleStationUpdated = (updatedStation:Dispacher) => {
+const handleDispacherUpdated = (updatedDispacher:Dispacher) => {
   setDispacher((prev) =>
-    prev.map((s) => (s.id === updatedStation.id ? updatedStation : s))
+    prev.map((d) => (d.id === updatedDispacher.id ? updatedDispacher : d))
   );
 };
    const columns = [
@@ -102,7 +105,7 @@ const handleStationUpdated = (updatedStation:Dispacher) => {
       isOpen={isEditModalOpen}
       handleCancel={closeEditModal}
       Dispacher={EditingDispachers}
-      onUpdated={handleStationUpdated}
+      onUpdated={handleDispacherUpdated}
     />
   )}
         <Button
@@ -121,12 +124,19 @@ const handleStationUpdated = (updatedStation:Dispacher) => {
     (dispacher) =>
        dispacher.FullName.toLowerCase().includes(searchText.toLowerCase()) 
      );
+
+      const token = localStorage.getItem("token");
+  if (!token) console.warn("No token found! Login required.");
+
      const fetchDispachers = async () => {
         try {
-          const res = await axios.get("http://localhost:5000/dispachers");
+           const res = await axios.get("http://localhost:5000/dispachers", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
           setDispacher(res.data);
-        } catch (err) {
+        } catch (err:any) {
           console.error("Failed to fetch dispachers:", err);
+          message.error(err.response?.data?.message || "Failed to fetch routes");
         }
       };
    useEffect(() => {
@@ -159,6 +169,4 @@ return(
    </div>
     </>
 )
-
-
 }
