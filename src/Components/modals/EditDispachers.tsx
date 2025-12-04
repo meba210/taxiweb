@@ -99,11 +99,7 @@ const token = localStorage.getItem("token");
         }
     );
     
-//     const routeObj = routes.find((r) => r.id === Number(selectedRoute));
 
-// const Route = routeObj
-//   ? `${routeObj.StartTerminal} → ${routeObj.EndTerminal}`
-//   : selectedRoute;
 
       message.success(res.data.message || "✅ Station updated!");
       onUpdated({ ...Dispacher!, FullName: FullName, Email: Email, PhoneNumber: PhoneNumber, UserName: UserName,Routes: selectedRoute,});

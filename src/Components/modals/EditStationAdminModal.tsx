@@ -78,7 +78,7 @@ const handleUpdate = async () => {
     });
 
     // Find the name of the selected station
-    const stationName = stations.find((s) => s.id ===  Number(selectedStation))?.StationName || selectedStation;
+    //const stationName = stations.find((s) => s.id ===  Number(selectedStation))?.StationName || selectedStation;
 
     message.success(res.data.message || "✅ Station updated!");
     onUpdated({
@@ -87,7 +87,7 @@ const handleUpdate = async () => {
       Email,
       PhoneNumber,
       UserName,
-      Stations: stationName, // now display name
+      Stations: selectedStation, // now display name
     });
 
     handleCancel();
@@ -112,7 +112,7 @@ const handleUpdate = async () => {
           value={selectedStation}
           options={stations.map((s) => ({
             label: s.StationName,
-            value: s.id,
+            value:  s.StationName,
           }))}
          />
         <Button type="primary" loading={loading} onClick={handleUpdate} className="w-full">
