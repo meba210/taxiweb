@@ -1,3 +1,7 @@
+import DispatcherDetail from './Components/DetailPages/DispacherDetalPage';
+import RouteDetail from './Components/DetailPages/RoutesDetailPage';
+import StationAdminDetail from './Components/DetailPages/StationAdminDetailPage';
+import StationDetail from './Components/DetailPages/StationDetailPage';
 import Layouts from './Components/layout';
 import AdminDashboard from './Pages/AdminDashboard';
 import Dispachers from './Pages/Dispachers';
@@ -24,12 +28,16 @@ function App() {
   <Route path='/admin' element={<Layouts role='admin' />}>
           <Route index element={<AdminDashboard />} />
           <Route  path='/admin/Stations' index element={<Stations/>} />
+           <Route  path='/admin/Stations/:id' index element={<StationDetail/>} />
            <Route  path='/admin/StationAdmins' index element={<StationAdmins/>} />
+           <Route path= '/admin/StationAdmins/:id' element= {<StationAdminDetail />} />
         </Route>
    <Route path='/stationAdmin' element={<Layouts role='stationAdmin'/>}>
           <Route index element={<StationsAdminDashboard/>} />
               <Route  path='/stationAdmin/Routes' index element={<Routess/>} />
+               <Route  path='/stationAdmin/Routes/:id' index element={<RouteDetail/>} />
             <Route  path='/stationAdmin/Dispachers' index element={<Dispachers/>} />
+              <Route  path='/stationAdmin/Dispachers/:id' index element={<DispatcherDetail/>} />
               <Route  path='/stationAdmin/TaxiAssignment' index element={<TaxiAssignment/>} />
         </Route>
 </Routes>
