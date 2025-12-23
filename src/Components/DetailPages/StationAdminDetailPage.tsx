@@ -160,7 +160,7 @@ export default function StationAdminDetail() {
               <Descriptions.Item label="Phone">
                 <div className="flex items-center">
                   <PhoneOutlined className="mr-2 text-gray-400" />
-                  <span>+{admin.PhoneNumber}</span>
+                  <span>0{admin.PhoneNumber}</span>
                 </div>
               </Descriptions.Item>
             </Descriptions>

@@ -17,31 +17,77 @@ const Login:  React.FC<LoginPageProps> = ({ isModalOpen, handleCancel}) => {
   const [loading, setLoading] = useState(false); 
   const navigate = useNavigate(); 
    
-  const onSubmit = async (values: FieldType) => {
-    setLoading(true);
-    try {
-      const res = await axios.post(
-        "http://localhost:5000/auth/login",
-        values,
+//   const onSubmit = async (values: FieldType) => {
+//     setLoading(true);
+//     try {
+//       const res = await axios.post(
+//         "http://localhost:5000/auth/login",
+//         values,
         
-      );
-    console.log("✅ Login response:", res.data);
+//       );
+//     console.log("✅ Login response:", res.data);
        
-      message.success("✅ Login successful");
- localStorage.setItem("token", res.data.token);
-      const role = res.data.role;
+//       message.success("✅ Login successful");
+//  localStorage.setItem("token", res.data.token);
+//       const role = res.data.role;
 
-      if (role === "admin") navigate("/admin");
-      else if (role === "stationAdmin") navigate("/stationAdmin");
-     else alert("Unknown role!");
+//       if (role === "admin") navigate("/admin");
+//       else if (role === "stationAdmin") navigate("/stationAdmin");
+//      else alert("Unknown role!");
 
-    } catch (error: any) {
-      message.error(error.response?.data?.message || "Login failed");
-    } finally {
-      setLoading(false);
-    }
-  };
+//     } catch (error: any) {
+//       message.error(error.response?.data?.message || "Login failed");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
  
+const onSubmit = async (values: FieldType) => {
+  setLoading(true);
+
+  try {
+    const res = await axios.post(
+      "http://localhost:5000/auth/login",
+      values
+    );
+
+    console.log("✅ Login response:", res.data);
+
+    const { token, role, userId, mustChangePassword } = res.data;
+
+    // Store session
+    localStorage.setItem("token", token);
+    localStorage.setItem("role", role);
+    if (userId) localStorage.setItem("id", userId.toString());
+    if (mustChangePassword !== undefined) {
+      localStorage.setItem("mustChangePassword", String(mustChangePassword));
+    }
+
+    message.success("✅ Login successful");
+
+    // 🔀 Role-based navigation
+    if (role === "stationAdmin") {
+      if (mustChangePassword) {
+        navigate("/stationAdmin/changePassword");
+      } else {
+        navigate("/stationAdmin");
+      }
+    } 
+    else if (role === "admin") {
+      navigate("/admin");
+    } 
+    else {
+      message.error("Unknown role!");
+    }
+
+  } catch (error: any) {
+    message.error(error.response?.data?.message || "Login failed");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
   return (
     
     <Modal
@@ -75,9 +121,9 @@ const Login:  React.FC<LoginPageProps> = ({ isModalOpen, handleCancel}) => {
       <Input.Password className="border border-blue-300 rounded-md px-2 py-1 h-10" />
     </Form.Item>
 
-    <Form.Item<FieldType> name="remember" valuePropName="checked" label={null}>
+    {/* <Form.Item<FieldType> name="remember" valuePropName="checked" label={null}>
       <Checkbox className="text-blue-700">Remember me</Checkbox>
-    </Form.Item>
+    </Form.Item> */}
 
     <Form.Item label={null} className="text-center">
       <Button
@@ -96,3 +142,5 @@ const Login:  React.FC<LoginPageProps> = ({ isModalOpen, handleCancel}) => {
 };
 
 export default Login;
+
+

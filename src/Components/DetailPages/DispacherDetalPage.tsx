@@ -42,7 +42,7 @@ type Dispacher = {
   PhoneNumber: string;
   UserName: string;
   Routes: string;
-  Status?: 'active' | 'inactive' | 'on_leave';
+  Status?: 'active' | 'inactive';
   CreatedAt?: string;
   AssignedStations?: number;
   TotalAssignments?: number;
@@ -194,7 +194,7 @@ export default function DispatcherDetail() {
         </div>
         
         {/* Action Buttons */}
-        <Space size="small" className="flex flex-col sm:flex-row gap-1">
+        {/* <Space size="small" className="flex flex-col sm:flex-row gap-1">
           <Tooltip title="Edit dispatcher">
             <Button
               type="text"
@@ -227,7 +227,7 @@ export default function DispatcherDetail() {
               </Button>
             </Tooltip>
           </Popconfirm>
-        </Space>
+        </Space> */}
       </div>
 
       <Row gutter={[24, 24]}>
@@ -282,7 +282,7 @@ export default function DispatcherDetail() {
               <Descriptions.Item label="Phone">
                 <div className="flex items-center">
                   <PhoneOutlined className="mr-2 text-gray-400" />
-                  <span>+{dispacher.PhoneNumber}</span>
+                  <span>0{dispacher.PhoneNumber}</span>
                 </div>
               </Descriptions.Item>
 
@@ -331,7 +331,7 @@ export default function DispatcherDetail() {
 
         {/* Right Column - Quick Actions & Stats */}
         <Col xs={24} lg={8}>
-          <Card className="shadow-sm mb-4">
+          {/* <Card className="shadow-sm mb-4">
             <h3 className="text-lg font-semibold mb-4">Dispatcher Statistics</h3>
             <Row gutter={[16, 16]}>
               <Col xs={12} sm={6} lg={12}>
@@ -367,7 +367,7 @@ export default function DispatcherDetail() {
                 />
               </Col>
             </Row>
-          </Card>
+          </Card> */}
 
           <Card className="shadow-sm mb-4">
             <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
@@ -390,13 +390,6 @@ export default function DispatcherDetail() {
                 Call Dispatcher
               </Button>
 
-              <Button 
-                block
-                icon={<BarChartOutlined />}
-                onClick={() => message.info('Performance analytics coming soon')}
-              >
-                View Performance
-              </Button>
             </div>
           </Card>
 
@@ -406,8 +399,6 @@ export default function DispatcherDetail() {
               {[
                 { permission: 'Route Management', access: 'Full' },
                 { permission: 'Taxi Assignment', access: 'Full' },
-                { permission: 'Report Generation', access: 'Limited' },
-                { permission: 'System Settings', access: 'None' },
               ].map((perm, index) => (
                 <div key={index} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
                   <div className="flex items-center">

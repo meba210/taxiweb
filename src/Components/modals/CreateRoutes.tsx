@@ -103,24 +103,24 @@ const CreateRoutes: React.FC<CreateRoutesProps> = ({
 
   // Check form validity
   useEffect(() => {
-    const isValid = StartTerminal && EndTerminal && 
-                    StartTerminal.trim().length >= 2 && 
-                    EndTerminal.trim().length >= 2 &&
-                    StartTerminal.trim().toLowerCase() !== EndTerminal.trim().toLowerCase();
+    const isValid =  EndTerminal && 
+                    //StartTerminal.trim().length >= 2 && 
+                    EndTerminal.trim().length >= 2 
+                    //StartTerminal.trim().toLowerCase() !== EndTerminal.trim().toLowerCase();
     setIsFormValid(!!isValid);
-  }, [StartTerminal, EndTerminal]);
+  }, [EndTerminal]);
 
   const handleCreate = async () => {
     // Enhanced validation with specific messages
-    if (!StartTerminal.trim()) {
-      message.warning("Please enter the start terminal name");
-      return;
-    }
+    // if (!StartTerminal.trim()) {
+    //   message.warning("Please enter the start terminal name");
+    //   return;
+    // }
     
-    if (StartTerminal.trim().length < 2) {
-      message.warning("Start terminal should be at least 2 characters long");
-      return;
-    }
+    // if (StartTerminal.trim().length < 2) {
+    //   message.warning("Start terminal should be at least 2 characters long");
+    //   return;
+    // }
 
     if (!EndTerminal.trim()) {
       message.warning("Please enter the end terminal name");
@@ -132,10 +132,10 @@ const CreateRoutes: React.FC<CreateRoutesProps> = ({
       return;
     }
 
-    if (StartTerminal.trim().toLowerCase() === EndTerminal.trim().toLowerCase()) {
-      message.warning("Start and end terminals cannot be the same");
-      return;
-    }
+    // if (StartTerminal.trim().toLowerCase() === EndTerminal.trim().toLowerCase()) {
+    //   message.warning("Start and end terminals cannot be the same");
+    //   return;
+    // }
 
     const token = localStorage.getItem("token");
     if (!token) {
@@ -151,7 +151,7 @@ const CreateRoutes: React.FC<CreateRoutesProps> = ({
       const res = await axios.post(
         "http://localhost:5000/routes",
         { 
-          StartTerminal: StartTerminal.trim(),
+         // StartTerminal: StartTerminal.trim(),
           EndTerminal: EndTerminal.trim() 
         },
         {
@@ -168,7 +168,7 @@ const CreateRoutes: React.FC<CreateRoutesProps> = ({
       });
 
     
-      setStartTerminal("");
+      //setStartTerminal("");
       setEndTerminal("");
       form.resetFields();
       
@@ -188,7 +188,7 @@ const CreateRoutes: React.FC<CreateRoutesProps> = ({
   
   useEffect(() => {
     if (!isModalOpen) {
-      setStartTerminal("");
+      //setStartTerminal("");
       setEndTerminal("");
       form.resetFields();
     }
@@ -251,7 +251,7 @@ const CreateRoutes: React.FC<CreateRoutesProps> = ({
           bodyStyle={{ padding: '16px' }}
         >
           {/* Start Terminal */}
-          <Form.Item
+          {/* <Form.Item
             label={
               <Space size={4}>
                 <FaMapMarkerAlt size={12} />
@@ -322,7 +322,7 @@ const CreateRoutes: React.FC<CreateRoutesProps> = ({
           <Divider>
             <FaRoute style={{ color: '#d9d9d9', margin: '0 8px' }} />
             <Text type="secondary">to</Text>
-          </Divider>
+          </Divider> */}
 
           {/* End Terminal */}
           <Form.Item
@@ -434,7 +434,7 @@ const CreateRoutes: React.FC<CreateRoutesProps> = ({
         )}
 
         {/* Form Requirements */}
-        <Alert
+        {/* <Alert
           message="Requirements"
           description={
             <Space direction="vertical" size={2} style={{ width: '100%' }}>
@@ -447,7 +447,7 @@ const CreateRoutes: React.FC<CreateRoutesProps> = ({
           type="info"
           showIcon
           style={{ marginBottom: 24, borderRadius: '8px' }}
-        />
+        /> */}
 
         {/* Action Buttons */}
         <Space style={{ width: '100%', justifyContent: 'space-between' }}>

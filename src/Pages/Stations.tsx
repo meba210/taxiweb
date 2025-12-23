@@ -677,30 +677,26 @@ const handleStatusChange = async (id: number, newStatus: 'active' | 'inactive') 
         className="shadow-sm border-0 mb-6"
         bodyStyle={{ padding: '20px' }}
       >
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          
-          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-            <Input
-              value={searchText}
-              onChange={(e) => handleSearch(e.target.value)}
-              placeholder="Search by station name, city, location or status..."
-              className="rounded-lg h-10 border-gray-300 focus:border-blue-500"
-              prefix={<CiSearch className="text-gray-400" />}
-              allowClear
-              style={{ minWidth: '250px' }}
-            />
-            
-            <Button
-              type="primary"
-              onClick={showCreateStation}
-              icon={<MdOutlineAddLocation />}
-              className="bg-gradient-to-r from-blue-600 to-blue-500 border-0 hover:from-blue-700 hover:to-blue-600 shadow-sm h-10 ml-150"
-              size="middle"
-            >
-              <span className="hidden sm:inline">Create Station</span>
-            </Button>
-          </div>
-        </div>
+       <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 ">
+  <Input
+    value={searchText}
+    onChange={(e) => handleSearch(e.target.value)}
+    placeholder="Search by station name, city, location or status..."
+    className="rounded-lg h-10 border-gray-300 focus:border-blue-500 w-40 "
+    prefix={<CiSearch className="text-gray-400" />}
+    allowClear
+  />
+  
+  <Button
+    type="primary"
+    onClick={showCreateStation}
+    icon={<MdOutlineAddLocation />}
+    className="bg-gradient-to-r from-blue-600 to-blue-500 border-0 hover:from-blue-700 hover:to-blue-600 shadow-sm h-10 w-full sm:w-auto"
+    size="middle"
+  >
+    <span className="text-sm sm:text-base">Create Station</span>
+  </Button>
+</div>
       </Card>
 
       <Card
@@ -787,7 +783,6 @@ const handleStatusChange = async (id: number, newStatus: 'active' | 'inactive') 
           pagination={{
             showSizeChanger: true,
             showQuickJumper: true,
-            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} stations`,
             className: "px-4 md:px-6",
             responsive: true,
           }}

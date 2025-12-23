@@ -389,14 +389,10 @@ export default function Layouts({ role }: LayoutsProps) {
             </div>
 
             {/* Mobile Title */}
-            <div className="md:hidden">
-              <h2 className="text-lg font-semibold text-gray-800 m-0">
-                {activeMenuItem.label}
-              </h2>
-            </div>
+            
 
             {/* User Profile - Mobile */}
-            <div className="md:hidden">
+            {/* <div className="md:hidden">
               <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
                 <Avatar 
                   size="default" 
@@ -405,7 +401,7 @@ export default function Layouts({ role }: LayoutsProps) {
                   {role === 'admin' ? 'A' : 'S'}
                 </Avatar>
               </Dropdown>
-            </div>
+            </div> */}
           </div>
 
           {/* Desktop Navigation & Controls */}
@@ -460,7 +456,7 @@ export default function Layouts({ role }: LayoutsProps) {
           </div>
 
           {/* Mobile Navigation Pills */}
-          <div className="md:hidden w-full mt-3 pb-3 overflow-x-auto">
+          {/* <div className="md:hidden w-full mt-3 pb-3 overflow-x-auto">
             <div className="flex space-x-2 min-w-max">
               {headerNavItems.slice(0, 4).map(item => (
                 <div
@@ -473,7 +469,7 @@ export default function Layouts({ role }: LayoutsProps) {
                 </div>
               ))}
             </div>
-          </div>
+          </div> */}
         </Header>
 
         {/* Main Content */}

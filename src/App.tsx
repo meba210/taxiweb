@@ -7,11 +7,13 @@ import AdminDashboard from './Pages/AdminDashboard';
 import Dispachers from './Pages/Dispachers';
 import HomePage from './Pages/HomePage';
 import Routess from './Pages/Routes';
+import ReportsPage from './Pages/StationAdminReport';
 import StationAdmins from './Pages/StationAdmins';
 import Stations from './Pages/Stations';
 //import LoginPage from './Pages/LoginPage';
 import StationsAdminDashboard from './Pages/StationsAdminDashboard';
 import TaxiAssignment from './Pages/TaxiAssignment';
+import ChangePasswordScreen from './Pages/changePassword';
 
 import './index.css'
 import { BrowserRouter,Routes,Route } from 'react-router-dom';
@@ -32,13 +34,16 @@ function App() {
            <Route  path='/admin/StationAdmins' index element={<StationAdmins/>} />
            <Route path= '/admin/StationAdmins/:id' element= {<StationAdminDetail />} />
         </Route>
+        <Route  path='/stationAdmin/changePassword' index element={<ChangePasswordScreen/>} />
    <Route path='/stationAdmin' element={<Layouts role='stationAdmin'/>}>
+     
           <Route index element={<StationsAdminDashboard/>} />
               <Route  path='/stationAdmin/Routes' index element={<Routess/>} />
                <Route  path='/stationAdmin/Routes/:id' index element={<RouteDetail/>} />
             <Route  path='/stationAdmin/Dispachers' index element={<Dispachers/>} />
               <Route  path='/stationAdmin/Dispachers/:id' index element={<DispatcherDetail/>} />
               <Route  path='/stationAdmin/TaxiAssignment' index element={<TaxiAssignment/>} />
+              <Route  path='/stationAdmin/Reports' index element={<ReportsPage/>} />
         </Route>
 </Routes>
     </BrowserRouter>

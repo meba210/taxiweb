@@ -115,7 +115,7 @@ type CreateStationAdminProps = {
 };
 
 type Station = {
-  id: number;
+ // id: number;
   StationName: string;
 };
 
@@ -131,7 +131,7 @@ const CreateStationAdmin: React.FC<CreateStationAdminProps> = ({
   const [UserName, setUserName] = useState("");
   const [stations, setStations] = useState<Station[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedStation, setSelectedStation] = useState<number | undefined>();
+  const [selectedStation, setSelectedStation] = useState<string | undefined>();
   const [isFormValid, setIsFormValid] = useState(false);
   
   const screens = useBreakpoint();
@@ -281,7 +281,7 @@ const CreateStationAdmin: React.FC<CreateStationAdminProps> = ({
   };
 
   const selectedStationName = selectedStation 
-    ? stations.find(s => s.id === selectedStation)?.StationName 
+    ? stations.find(s => s.StationName === selectedStation)?.StationName 
     : null;
 
   return (
@@ -524,14 +524,10 @@ const CreateStationAdmin: React.FC<CreateStationAdminProps> = ({
                   <Space>
                     <FaBuilding style={{ color: '#722ed1' }} />
                     <Text>{screens.xs ? (s.StationName.length > 15 ? s.StationName.substring(0, 15) + '...' : s.StationName) : s.StationName}</Text>
-                    {!screens.xs && (
-                      <Tag color="purple" style={{ marginLeft: 'auto', fontSize: '10px' }}>
-                        ID: {s.id}
-                      </Tag>
-                    )}
+                  
                   </Space>
                 ),
-                value: s.id,
+                value: s.StationName,
               }))}
               notFoundContent={
                 <div style={{ padding: '16px', textAlign: 'center' }}>

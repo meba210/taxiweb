@@ -186,7 +186,7 @@ type StationAdmin = {
   id: number;
   FullName: string;
   Email: string;
-  PhoneNumber:  string;
+  PhoneNumber: string;
   UserName: string;
   Stations: string;
 };
@@ -288,7 +288,7 @@ export default function Stations() {
       render: (text) => (
         <div className="flex items-center text-gray-600">
           <CiPhone className="mr-2 text-gray-400" />
-          +{text}
+          {text}
         </div>
       ),
     },
@@ -318,25 +318,12 @@ export default function Stations() {
       dataIndex: 'Stations',
       key: 'stations',
       responsive: ['md'],
-      render: (stations) => {
-        const stationArray = stations?.split(',') || [];
-        return (
-          <div className="flex flex-wrap gap-1">
-            {stationArray.slice(0, 2).map((station: string, index: number) => (
-              <Tag key={index} color="green" className="text-xs">
-                {station.trim()}
-              </Tag>
-            ))}
-            {stationArray.length > 2 && (
-              <Tooltip title={stationArray.slice(2).join(', ')}>
-                <Tag color="default" className="text-xs">
-                  +{stationArray.length - 2} more
-                </Tag>
-              </Tooltip>
-            )}
-          </div>
-        );
-      },
+     render: (text) => (
+        <Tag color="green" className="text-xs">
+          {text}
+        </Tag>
+      ),
+       
     },
     {
       title: 'ACTIONS',

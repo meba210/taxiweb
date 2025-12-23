@@ -171,7 +171,7 @@ export default function StationDetail() {
 
       <Row gutter={[24, 24]}>
         {/* Left Column - Station Information */}
-        <Col xs={24} lg={16}>
+        <Col xs={24} lg={160}>
           <Card className="shadow-sm">
             <div className="flex items-center mb-6">
               <Avatar 
@@ -254,7 +254,7 @@ export default function StationDetail() {
                 Station Features
               </h3>
               <div className="flex flex-wrap gap-2">
-                {['Taxi Stand', 'Waiting Area', 'Restrooms', 'Parking', 'Security', 'Wi-Fi'].map((feature, index) => (
+                {['Taxi Stand', 'Waiting Area', 'Parking', 'Security'].map((feature, index) => (
                   <Tag 
                     key={index} 
                     color="blue"
@@ -270,7 +270,7 @@ export default function StationDetail() {
 
         {/* Right Column - Quick Actions & Stats */}
         <Col xs={24} lg={8}>
-          <Card className="shadow-sm mb-4">
+          {/* <Card className="shadow-sm mb-4">
             <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
             
             <div className="space-y-3">
@@ -307,9 +307,9 @@ export default function StationDetail() {
                 </div>
               </div>
             </div>
-          </Card>
+          </Card> */}
 
-          <Card className="shadow-sm">
+          {/* <Card className="shadow-sm">
             <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
             <div className="space-y-3">
               {[
@@ -329,7 +329,7 @@ export default function StationDetail() {
                 </div>
               ))}
             </div>
-          </Card>
+          </Card> */}
         </Col>
       </Row>
     </div>

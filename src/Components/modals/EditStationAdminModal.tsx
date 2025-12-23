@@ -195,7 +195,7 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
       
       // Find station ID from station name
       const station = stations.find(s => s.StationName === StationAdmin.Stations);
-      setSelectedStation(station ? station.id.toString() : "");
+      setSelectedStation(station ? station.StationName.toString() : "");
       
       setOriginalAdmin(StationAdmin);
       
@@ -204,7 +204,7 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
         Email: StationAdmin.Email,
         PhoneNumber: StationAdmin.PhoneNumber,
         UserName: StationAdmin.UserName,
-        Stations: station ? station.id : "",
+        Stations: station ? station.StationName : "",
       });
     }
   }, [isOpen, StationAdmin, stations]);
@@ -283,7 +283,7 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
       });
 
       // Find the name of the selected station
-      const stationName = stations.find((s) => s.id === Number(selectedStation))?.StationName || selectedStation;
+     const stationName = stations.find((s) => s.id === Number(selectedStation))?.StationName || selectedStation;
 
       message.success({
         content: res.data.message || "✅ Station Admin updated successfully!",
@@ -616,7 +616,7 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
                     </Tag>
                   </Space>
                 ),
-                value: s.id.toString(),
+                value: s.StationName,
               }))}
               notFoundContent={
                 <div style={{ padding: '16px', textAlign: 'center' }}>
