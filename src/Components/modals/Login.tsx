@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button, Checkbox, Form, Input, message, Modal } from 'antd';
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import axios from "axios";
 
 type FieldType = {
@@ -64,6 +64,12 @@ const onSubmit = async (values: FieldType) => {
     }
 
     message.success("✅ Login successful");
+
+      if (!token || !role) {
+     return <div>Access Denied</div>; // or wherever your login is
+  }
+
+ 
 
     // 🔀 Role-based navigation
     if (role === "stationAdmin") {
