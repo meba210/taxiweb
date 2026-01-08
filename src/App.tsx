@@ -1,43 +1,76 @@
+import DispatcherDetail from './Components/DetailPages/DispacherDetalPage';
+import RouteDetail from './Components/DetailPages/RoutesDetailPage';
+import StationAdminDetail from './Components/DetailPages/StationAdminDetailPage';
+import StationDetail from './Components/DetailPages/StationDetailPage';
 import Layouts from './Components/layout';
 import AdminDashboard from './Pages/AdminDashboard';
 import Dispachers from './Pages/Dispachers';
 import HomePage from './Pages/HomePage';
 import Routess from './Pages/Routes';
+import ReportsPage from './Pages/StationAdminReport';
 import StationAdmins from './Pages/StationAdmins';
 import Stations from './Pages/Stations';
-//import LoginPage from './Pages/LoginPage';
 import StationsAdminDashboard from './Pages/StationsAdminDashboard';
 import TaxiAssignment from './Pages/TaxiAssignment';
+import ChangePasswordScreen from './Pages/changePassword';
+import ProtectedRoute from './middleware/ProtectedRoute';
 
-import './index.css'
-import { BrowserRouter,Routes,Route } from 'react-router-dom';
+import './index.css';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Login from './Components/modals/Login';
+
+import TaxiDrivers from './Pages/TaxiDrivers';
+import Users from './Pages/Users';
 function App() {
-  
-
   return (
     <>
-    <BrowserRouter>
-    
-      <Routes>
-  <Route path='/' element={<HomePage/>} />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route
+            path="/auth/login"
+            element={
+              <Login
+                isModalOpen={false}
+                handleCancel={function (): void {
+                  throw new Error('Function not implemented.');
+                }}
+              />
+            }
+          />
 
-  <Route path='/admin' element={<Layouts role='admin' />}>
-          <Route index element={<AdminDashboard />} />
-          <Route  path='/admin/Stations' index element={<Stations/>} />
-           <Route  path='/admin/StationAdmins' index element={<StationAdmins/>} />
-        </Route>
-   <Route path='/stationAdmin' element={<Layouts role='stationAdmin'/>}>
-          <Route index element={<StationsAdminDashboard/>} />
-              <Route  path='/stationAdmin/Routes' index element={<Routess/>} />
-            <Route  path='/stationAdmin/Dispachers' index element={<Dispachers/>} />
-              <Route  path='/stationAdmin/TaxiAssignment' index element={<TaxiAssignment/>} />
-        </Route>
-</Routes>
-    </BrowserRouter>
- 
+          <Route element={<ProtectedRoute />}>
+            <Route path="/admin" element={<Layouts role="admin" />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="Stations" element={<Stations />} />
+              <Route path="Stations/:id" element={<StationDetail />} />
+              <Route path="StationAdmins" element={<StationAdmins />} />
+              <Route
+                path="StationAdmins/:id"
+                element={<StationAdminDetail />}
+              />
+              <Route path="TaxiDrivers" element={<TaxiDrivers />} />
+              <Route path="allUsers" element={<Users />} />
+            </Route>
 
-</>
-  )
+            <Route
+              path="/stationAdmin"
+              element={<Layouts role="stationAdmin" />}
+            >
+              <Route index element={<StationsAdminDashboard />} />
+              <Route path="Routes" element={<Routess />} />
+              <Route path="Routes/:id" element={<RouteDetail />} />
+              <Route path="Dispachers" element={<Dispachers />} />
+              <Route path="Dispachers/:id" element={<DispatcherDetail />} />
+              <Route path="TaxiAssignment" element={<TaxiAssignment />} />
+              <Route path="Reports" element={<ReportsPage />} />
+              <Route path="changePassword" element={<ChangePasswordScreen />} />
+            </Route>
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </>
+  );
 }
 
-export default App
+export default App;

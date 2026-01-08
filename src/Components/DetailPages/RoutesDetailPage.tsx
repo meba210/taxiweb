@@ -1,52 +1,44 @@
-// src/pages/RouteDetail.tsx
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  Card, 
-  Row, 
-  Col, 
-  Descriptions, 
-  Tag, 
-  Button, 
-  Avatar, 
+import {
+  Card,
+  Row,
+  Col,
+  Descriptions,
+  Tag,
+  Button,
+  Avatar,
   Divider,
   Skeleton,
   message,
   Badge,
-  Space,
-  Popconfirm,
-  Tooltip,
   Timeline,
-  Statistic
 } from 'antd';
-import { 
-  ArrowLeftOutlined, 
+import {
+  ArrowLeftOutlined,
   EnvironmentOutlined,
   ClockCircleOutlined,
-  TeamOutlined,
   CarOutlined,
   ScheduleOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  BarChartOutlined,
-  SafetyOutlined
 } from '@ant-design/icons';
-import { TbEdit, TbRoute, TbBus, TbRoute2 } from "react-icons/tb";
-import { RiDeleteBin6Line, RiRouteLine } from "react-icons/ri";
-import { CiLocationArrow1, CiTimer } from "react-icons/ci";
+import { TbRoute, TbRoute2 } from 'react-icons/tb';
+import { RiRouteLine } from 'react-icons/ri';
+import { CiLocationArrow1, CiTimer } from 'react-icons/ci';
 import axios from 'axios';
 
 type Route = {
   id: number;
-  StartTerminal: string;
+
+  station_name?: string;
   EndTerminal: string;
   Distance?: number;
   Duration?: number;
-  Status?: 'active' | 'inactive' | 'maintenance';
+  Status?: 'active' | 'inactive';
   AssignedVehicles?: number;
   DailyTrips?: number;
   CreatedAt?: string;
   Stations?: string[];
+  StartTerminal?: string;
 };
 
 export default function RouteDetail() {
@@ -54,56 +46,69 @@ export default function RouteDetail() {
   const navigate = useNavigate();
   const [route, setRoute] = useState<Route | null>(null);
   const [loading, setLoading] = useState(true);
+  const token = localStorage.getItem('token');
 
-
-  const token = localStorage.getItem("token");
-
-  // Fetch route details
   const fetchRouteDetails = async () => {
-    if (!token) return;
+    if (!token) {
+      message.error('Authentication required. Please login again.');
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await axios.get(`http://localhost:5000/routes/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-       let routeData: Route | null = null;
-      
+
+      let routeData: Route | null = null;
+
       if (Array.isArray(response.data)) {
-        // If it's an array, take the first item
         if (response.data.length > 0) {
           routeData = response.data[0];
         }
       } else {
-        // If it's already an object
         routeData = response.data;
       }
-      
-      setRoute(routeData);
-      
+
+      if (routeData) {
+        const mappedData: Route = {
+          station_name:
+            routeData.station_name || routeData.StartTerminal || 'Main Station',
+          // EndTerminal: routeData.EndTerminal || "Unknown Destination",
+          Distance: routeData.Distance,
+          Duration: routeData.Duration,
+          Status: routeData.Status || 'active',
+          AssignedVehicles: routeData.AssignedVehicles,
+          DailyTrips: routeData.DailyTrips,
+          CreatedAt: routeData.CreatedAt,
+          Stations: routeData.Stations,
+
+          ...routeData,
+        };
+
+        setRoute(mappedData);
+      }
     } catch (error: any) {
       console.error('Error fetching route details:', error);
-      message.error(error.response?.data?.message || 'Failed to load route details');
+      message.error(
+        error.response?.data?.message || 'Failed to load route details'
+      );
     } finally {
       setLoading(false);
     }
   };
- 
 
-  // Get status color
   const getStatusInfo = (status: string) => {
     switch (status) {
       case 'active':
         return { color: 'success', text: 'Active' };
       case 'inactive':
         return { color: 'default', text: 'Inactive' };
-      case 'maintenance':
-        return { color: 'warning', text: 'Maintenance' };
       default:
         return { color: 'default', text: 'Unknown' };
     }
   };
 
-  // Format duration
   const formatDuration = (minutes: number) => {
     if (!minutes) return 'N/A';
     const hours = Math.floor(minutes / 60);
@@ -120,7 +125,7 @@ export default function RouteDetail() {
 
   if (loading) {
     return (
-      <div className="p-6">
+      <div className="p-4 md:p-6 lg:p-8">
         <Skeleton active paragraph={{ rows: 6 }} />
       </div>
     );
@@ -128,103 +133,139 @@ export default function RouteDetail() {
 
   if (!route) {
     return (
-      <Card className="shadow-sm">
-        <div className="text-center py-12">
-          <h3 className="text-lg font-semibold text-gray-600">Route not found</h3>
-          <Button 
-            type="primary" 
-            onClick={() => navigate('/stationAdmin/Routes')}
-            className="mt-4"
-          >
-            Back to Routes
-          </Button>
-        </div>
-      </Card>
+      <div className="p-4 md:p-6 lg:p-8">
+        <Card className="shadow-sm">
+          <div className="text-center py-8 md:py-12">
+            <h3 className="text-lg md:text-xl font-semibold text-gray-600">
+              Route not found
+            </h3>
+            <Button
+              type="primary"
+              onClick={() => navigate('/stationAdmin/Routes')}
+              className="mt-4"
+              size="middle"
+            >
+              Back to Routes
+            </Button>
+          </div>
+        </Card>
+      </div>
     );
   }
 
   const statusInfo = getStatusInfo(route.Status || 'active');
-  const stations = route.Stations || ['Terminal A', 'Terminal B'];
+  const stations = route.Stations || [
+    route.station_name || 'Main Station',
+    route.EndTerminal,
+  ];
+
+  const startTerminal =
+    route.station_name || route.StartTerminal || 'Main Station';
 
   return (
-    <div className="p-4 md:p-6">
-      {/* Header with Back Button and Actions */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <div className="flex items-center">
-          <Button 
-            icon={<ArrowLeftOutlined />} 
+    <div className="p-3 sm:p-4 md:p-6 lg:p-8">
+      <div className="flex flex-col xs:flex-row justify-between items-start xs:items-center mb-4 md:mb-6 gap-3 xs:gap-4">
+        <div className="flex items-center flex-wrap gap-2 xs:gap-0">
+          <Button
+            icon={<ArrowLeftOutlined />}
             onClick={() => navigate('/stationAdmin/Routes')}
-            className="mr-4"
+            className="mr-2 xs:mr-4"
+            size="middle"
           >
-            Back
+            <span className="hidden xs:inline">Back</span>
           </Button>
-          <h1 className="text-2xl font-bold text-gray-800">Route Details</h1>
+          <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
+            Route Details
+          </h1>
         </div>
       </div>
 
-      <Row gutter={[24, 24]}>
-        {/* Left Column - Route Information */}
-        <Col xs={24} lg={16}>
-          <Card className="shadow-sm">
-            <div className="flex items-center mb-6">
-              <Avatar 
-                size={64}
+      <Row gutter={[16, 16]}>
+        <Col xs={24}>
+          <Card className="shadow-sm" bodyStyle={{ padding: '16px' }}>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center mb-4 sm:mb-6 gap-4">
+              <Avatar
+                size={{ xs: 56, sm: 60, md: 64 }}
                 style={{ backgroundColor: '#722ed1' }}
                 icon={<TbRoute />}
-                className="mr-4"
+                className="flex-shrink-0"
               />
-              <div>
-                <div className="flex items-center gap-3">
-                  <h2 className="text-xl font-bold text-gray-800 m-0">
-                    {route.StartTerminal} → {route.EndTerminal}
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-col xs:flex-row xs:items-center gap-2 xs:gap-3 mb-2">
+                  <h2 className="text-base sm:text-lg md:text-xl font-bold text-gray-800 truncate">
+                    {startTerminal} → {route.EndTerminal}
                   </h2>
-                  <Badge status={statusInfo.color as any} text={statusInfo.text} />
+                  <Badge
+                    status={statusInfo.color as any}
+                    text={
+                      <span className="text-xs sm:text-sm">
+                        {statusInfo.text}
+                      </span>
+                    }
+                  />
                 </div>
-                <div className="flex items-center gap-4 mt-2">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:gap-4">
                   {route.Distance && (
-                    <div className="flex items-center text-gray-600">
-                      <TbRoute2 className="mr-2" />
+                    <div className="flex items-center text-gray-600 text-sm md:text-base">
+                      <TbRoute2 className="mr-1 md:mr-2 flex-shrink-0" />
                       <span>{route.Distance} km</span>
                     </div>
                   )}
                   {route.Duration && (
-                    <div className="flex items-center text-gray-600">
-                      <CiTimer className="mr-2" />
+                    <div className="flex items-center text-gray-600 text-sm md:text-base">
+                      <CiTimer className="mr-1 md:mr-2 flex-shrink-0" />
                       <span>{formatDuration(route.Duration)}</span>
                     </div>
+                  )}
+                  {route.id && (
+                    <Tag color="blue" className="text-xs md:text-sm">
+                      #{route.id}
+                    </Tag>
                   )}
                 </div>
               </div>
             </div>
 
-            <Descriptions 
-              title="Route Information" 
-              bordered 
-              column={{ xs: 1, sm: 2 }}
+            <Descriptions
+              title="Route Information"
+              bordered
+              column={{ xs: 1, sm: 2, md: 2 }}
               size="middle"
+              labelStyle={{
+                fontWeight: '600',
+                backgroundColor: '#fafafa',
+                width: 'auto',
+              }}
             >
-              <Descriptions.Item label="Start Terminal">
+              <Descriptions.Item label="Start Terminal (Station)">
                 <div className="flex items-center">
-                  <CiLocationArrow1 className="mr-2 text-green-500" />
-                  <span className="font-bold text-green-600">{route.StartTerminal}</span>
+                  <CiLocationArrow1 className="mr-2 text-green-500 flex-shrink-0" />
+                  <span className="font-bold text-green-600 truncate">
+                    {startTerminal}
+                  </span>
                 </div>
               </Descriptions.Item>
-              
+
               <Descriptions.Item label="End Terminal">
                 <div className="flex items-center">
-                  <CiLocationArrow1 className="mr-2 text-red-500" />
-                  <span className="font-bold text-red-600">{route.EndTerminal}</span>
+                  <CiLocationArrow1 className="mr-2 text-red-500 flex-shrink-0" />
+                  <span className="font-bold text-red-600 truncate">
+                    {route.EndTerminal}
+                  </span>
                 </div>
               </Descriptions.Item>
-              
+
               <Descriptions.Item label="Status">
-                <Badge status={statusInfo.color as any} text={statusInfo.text} />
+                <Badge
+                  status={statusInfo.color as any}
+                  text={statusInfo.text}
+                />
               </Descriptions.Item>
 
               {route.Distance && (
                 <Descriptions.Item label="Distance">
                   <div className="flex items-center">
-                    <TbRoute2 className="mr-2 text-gray-400" />
+                    <TbRoute2 className="mr-2 text-gray-400 flex-shrink-0" />
                     <span>{route.Distance} kilometers</span>
                   </div>
                 </Descriptions.Item>
@@ -233,7 +274,7 @@ export default function RouteDetail() {
               {route.Duration && (
                 <Descriptions.Item label="Duration">
                   <div className="flex items-center">
-                    <ClockCircleOutlined className="mr-2 text-gray-400" />
+                    <ClockCircleOutlined className="mr-2 text-gray-400 flex-shrink-0" />
                     <span>{formatDuration(route.Duration)}</span>
                   </div>
                 </Descriptions.Item>
@@ -242,7 +283,7 @@ export default function RouteDetail() {
               {route.AssignedVehicles && (
                 <Descriptions.Item label="Assigned Vehicles">
                   <div className="flex items-center">
-                    <CarOutlined className="mr-2 text-gray-400" />
+                    <CarOutlined className="mr-2 text-gray-400 flex-shrink-0" />
                     <span>{route.AssignedVehicles} vehicles</span>
                   </div>
                 </Descriptions.Item>
@@ -251,7 +292,7 @@ export default function RouteDetail() {
               {route.DailyTrips && (
                 <Descriptions.Item label="Daily Trips">
                   <div className="flex items-center">
-                    <ScheduleOutlined className="mr-2 text-gray-400" />
+                    <ScheduleOutlined className="mr-2 text-gray-400 flex-shrink-0" />
                     <span>{route.DailyTrips} trips/day</span>
                   </div>
                 </Descriptions.Item>
@@ -260,135 +301,61 @@ export default function RouteDetail() {
               {route.CreatedAt && (
                 <Descriptions.Item label="Created Date" span={2}>
                   <div className="flex items-center">
-                    <ClockCircleOutlined className="mr-2 text-gray-400" />
-                    <span>{new Date(route.CreatedAt).toLocaleDateString()}</span>
+                    <ClockCircleOutlined className="mr-2 text-gray-400 flex-shrink-0" />
+                    <span>
+                      {new Date(route.CreatedAt).toLocaleDateString()}
+                    </span>
                   </div>
                 </Descriptions.Item>
               )}
             </Descriptions>
 
-            <Divider />
+            <Divider className="my-4 sm:my-6" />
 
-            {/* Route Stations Timeline */}
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center">
-                <RiRouteLine className="mr-2 text-purple-500" />
-                Route Stations
+            <div className="mt-4 sm:mt-6">
+              <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center">
+                <RiRouteLine className="mr-2 text-purple-500 flex-shrink-0" />
+                Route Path
               </h3>
-              <Timeline mode="left">
-                {stations.map((station, index) => (
-                  <Timeline.Item
-                    key={index}
-                    color={index === 0 ? 'green' : index === stations.length - 1 ? 'red' : 'blue'}
-                    dot={index === 0 ? <CiLocationArrow1 /> : index === stations.length - 1 ? <CiLocationArrow1 /> : <EnvironmentOutlined />}
-                  >
-                    <Card size="small" className="w-full max-w-xs">
-                      <div className="font-medium">{station}</div>
-                      <div className="text-xs text-gray-500">
-                        {index === 0 ? route.StartTerminal : 
-                         index === stations.length - 1 ? route.EndTerminal : 
-                         'Intermediate Station'}
-                      </div>
-                    </Card>
-                  </Timeline.Item>
-                ))}
-              </Timeline>
-            </div>
-          </Card>
-        </Col>
-
-        {/* Right Column - Quick Actions & Stats */}
-        <Col xs={24} lg={8}>
-          <Card className="shadow-sm mb-4">
-            <h3 className="text-lg font-semibold mb-4">Route Statistics</h3>
-            <Row gutter={[16, 16]}>
-              <Col xs={12} sm={6} lg={12}>
-                <Statistic
-                  title="Distance"
-                  value={route.Distance || 0}
-                  suffix="km"
-                  prefix={<TbRoute2 />}
-                  valueStyle={{ color: '#722ed1' }}
-                />
-              </Col>
-              <Col xs={12} sm={6} lg={12}>
-                <Statistic
-                  title="Duration"
-                  value={route.Duration || 0}
-                  suffix="min"
-                  prefix={<CiTimer />}
-                  valueStyle={{ color: '#1890ff' }}
-                />
-              </Col>
-              <Col xs={12} sm={6} lg={12}>
-                <Statistic
-                  title="Daily Trips"
-                  value={route.DailyTrips || 0}
-                  prefix={<ScheduleOutlined />}
-                  valueStyle={{ color: '#52c41a' }}
-                />
-              </Col>
-              <Col xs={12} sm={6} lg={12}>
-                <Statistic
-                  title="Assigned Vehicles"
-                  value={route.AssignedVehicles || 0}
-                  prefix={<CarOutlined />}
-                  valueStyle={{ color: '#fa8c16' }}
-                />
-              </Col>
-            </Row>
-          </Card>
-
-          <Card className="shadow-sm mb-4">
-            <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
-            
-            <div className="space-y-3">
-              <Button 
-                type="primary" 
-                block
-                icon={<BarChartOutlined />}
-                onClick={() => message.info('Route analytics coming soon')}
-              >
-                View Analytics
-              </Button>
-              
-              <Button 
-                block
-                icon={<SafetyOutlined />}
-                onClick={() => message.info('Schedule feature coming soon')}
-              >
-                Manage Schedule
-              </Button>
-
-              <Button 
-                block
-                icon={<TeamOutlined />}
-                onClick={() => message.info('Vehicles feature coming soon')}
-              >
-                Assign Vehicles
-              </Button>
-            </div>
-          </Card>
-
-          <Card className="shadow-sm">
-            <h3 className="text-lg font-semibold mb-4">Route Safety Info</h3>
-            <div className="space-y-3">
-              {[
-                { feature: 'Regular Maintenance', status: 'completed' },
-                { feature: 'Driver Training', status: 'completed' },
-                { feature: 'Safety Audit', status: 'pending' },
-              ].map((info, index) => (
-                <div key={index} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
-                  <div className="flex items-center">
-                    <SafetyOutlined className="mr-2 text-gray-400" />
-                    <div className="text-sm">{info.feature}</div>
-                  </div>
-                  <Badge 
-                    status={info.status === 'completed' ? 'success' : 'warning' as any}
-                    text={info.status}
-                  />
-                </div>
-              ))}
+              <div className="overflow-x-auto">
+                <Timeline mode="left" className="min-w-min">
+                  {stations.map((station, index) => (
+                    <Timeline.Item
+                      key={index}
+                      color={
+                        index === 0
+                          ? 'green'
+                          : index === stations.length - 1
+                          ? 'red'
+                          : 'blue'
+                      }
+                      dot={
+                        index === 0 ? (
+                          <CiLocationArrow1 />
+                        ) : index === stations.length - 1 ? (
+                          <CiLocationArrow1 />
+                        ) : (
+                          <EnvironmentOutlined />
+                        )
+                      }
+                    >
+                      <Card
+                        size="small"
+                        className="w-full max-w-xs sm:max-w-sm md:max-w-md"
+                      >
+                        <div className="font-medium truncate">{station}</div>
+                        <div className="text-xs text-gray-500">
+                          {index === 0
+                            ? 'Start Station'
+                            : index === stations.length - 1
+                            ? 'End Terminal'
+                            : 'Intermediate Station'}
+                        </div>
+                      </Card>
+                    </Timeline.Item>
+                  ))}
+                </Timeline>
+              </div>
             </div>
           </Card>
         </Col>
