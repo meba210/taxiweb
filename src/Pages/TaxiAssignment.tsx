@@ -23,7 +23,6 @@ export default function TaxAssignment() {
   const [selectedRoute, setSelectedRoute] = useState<RouteTaxi | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Calculate demand status
   const getDemandStatus = (passengers: number, taxis: number) => {
     if (passengers > 50 && taxis < 3) {
       return {
@@ -90,7 +89,6 @@ export default function TaxAssignment() {
       dataIndex: 'WaitingCount',
       key: 'Passengers',
       render: (passengers) => {
-        // Handle null, undefined, or empty values
         const count = passengers || 0;
 
         return (
@@ -180,7 +178,6 @@ export default function TaxAssignment() {
     item.Routes.toLowerCase().includes(searchText.toLowerCase())
   );
 
-  // Calculate stats for the header
   const highDemandRoutes = routeTaxiList.filter(
     (item) => getDemandStatus(item.WaitingCount, item.Taxis).status === 'high'
   ).length;
@@ -268,7 +265,6 @@ export default function TaxAssignment() {
           pagination={{
             showSizeChanger: true,
             showQuickJumper: true,
-            // showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} routes`,
             className: 'px-4 md:px-6',
             responsive: true,
           }}
