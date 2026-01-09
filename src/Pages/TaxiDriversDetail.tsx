@@ -6,7 +6,6 @@ import {
   FiArrowLeft,
   FiUser,
   FiPhone,
-  //FiCar,
   FiCheckCircle,
 } from 'react-icons/fi';
 import { FaFingerprint, FaIdCardAlt, FaCarSide } from 'react-icons/fa';

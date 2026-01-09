@@ -96,9 +96,7 @@ const ChangePasswordScreen = () => {
     }
   };
 
-  const onFinishFailed = (errorInfo: any) => {
-    console.log('Failed:', errorInfo);
-  };
+  const onFinishFailed = (errorInfo: any) => {};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-50 p-4">

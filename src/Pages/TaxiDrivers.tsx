@@ -1,5 +1,4 @@
 import {
-  Button,
   Input,
   Table,
   Tag,
@@ -13,10 +12,8 @@ import {
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { CiSearch } from 'react-icons/ci';
-import { TbEdit, TbSteeringWheel, TbPhoneCall } from 'react-icons/tb';
-import { RiDeleteBin6Line } from 'react-icons/ri';
+import { TbSteeringWheel, TbPhoneCall } from 'react-icons/tb';
 import type { ColumnsType } from 'antd/es/table';
-import { useNavigate } from 'react-router-dom';
 
 type Taxi = {
   id: number;

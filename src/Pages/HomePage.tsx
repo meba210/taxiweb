@@ -25,7 +25,6 @@ export default function HomePage() {
   useEffect(() => {
     setIsVisible(true);
 
-    // One-trip left-to-right animation
     let position = -100;
     let currentDirection = 1;
     let tripCompleted = false;

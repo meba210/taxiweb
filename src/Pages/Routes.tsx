@@ -39,7 +39,6 @@ export default function Routes() {
     console.warn('No token found! Login required.');
   }
 
-  // Fetch routes
   const fetchRoutes = async () => {
     if (!token) {
       message.error('Please login again');
@@ -51,7 +50,6 @@ export default function Routes() {
       const res = await axios.get('http://localhost:5000/routes', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      console.log('Fetched routes:', res.data);
 
       const mappedRoutes = res.data.map((route: any) => ({
         id: route.id,
