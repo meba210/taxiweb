@@ -1,622 +1,401 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  Row,
-  Col,
-  Table,
-  DatePicker,
-  Select,
-  Button,
-  Statistic,
-  Progress,
-  Tabs,
-  Radio,
-  Space,
-  Tag,
-  Modal,
-  Alert,
-  Empty
-} from 'antd';
-import {
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  LineChart,
-  Line
-} from 'recharts';
-import {
-  DownloadOutlined,
-  FilterOutlined,
-  PrinterOutlined,
-  ReloadOutlined,
-  EyeOutlined,
-  DollarOutlined,
-  TeamOutlined,
-  CarOutlined,
-  ScheduleOutlined,
-  CheckCircleOutlined,
-  RiseOutlined,
-  FallOutlined
-} from '@ant-design/icons';
+import { Input, Table, Card, Button, Dropdown, type MenuProps } from 'antd';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
-import dayjs from 'dayjs';
+import type { ColumnsType } from 'antd/es/table';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
-const { RangePicker } = DatePicker;
-const { TabPane } = Tabs;
-const { Option } = Select;
+import { CiSearch } from 'react-icons/ci';
+import {
+  PrinterOutlined,
+  DownloadOutlined,
+  DownOutlined,
+} from '@ant-design/icons';
 
-const ReportsPage = () => {
+type RouteTaxi = {
+  id: number;
+  Routes: string;
+  Taxis: number;
+  RegisteredTaxis: number;
+  WaitingCount: number;
+  Dispatcher?: string;
+};
+
+export default function TaxAssignment() {
+  const [searchText, setSearchText] = useState('');
+  const [routeTaxiList, setRouteTaxiList] = useState<RouteTaxi[]>([]);
   const [loading, setLoading] = useState(false);
-  const [dateRange, setDateRange] = useState([dayjs().subtract(7, 'days'), dayjs()]);
-  const [selectedStation, setSelectedStation] = useState('all');
-  const [reportType, setReportType] = useState('daily');
-  const [stations, setStations] = useState([]);
-  const [reportData, setReportData] = useState(null);
-  const [exportModalVisible, setExportModalVisible] = useState(false);
-  const [timeFrame, setTimeFrame] = useState('week');
 
-  // Mock data for charts (replace with your API data)
-  const revenueData = [
-    { date: 'Mon', revenue: 4200 },
-    { date: 'Tue', revenue: 5200 },
-    { date: 'Wed', revenue: 3800 },
-    { date: 'Thu', revenue: 6100 },
-    { date: 'Fri', revenue: 7200 },
-    { date: 'Sat', revenue: 5800 },
-    { date: 'Sun', revenue: 4900 },
-  ];
-
-  const stationPerformanceData = [
-    { name: 'Mexico', trips: 245, revenue: 12450, efficiency: 94 },
-    { name: 'Jemo', trips: 189, revenue: 9450, efficiency: 88 },
-    { name: 'Bole', trips: 312, revenue: 15600, efficiency: 91 },
-    { name: 'Megenagna', trips: 156, revenue: 7800, efficiency: 85 },
-    { name: 'Sarbet', trips: 278, revenue: 13900, efficiency: 92 },
-  ];
-
-  const tripStatusData = [
-    { name: 'Completed', value: 1245, color: '#10b981' },
-    { name: 'In Progress', value: 78, color: '#3b82f6' },
-    { name: 'Cancelled', value: 45, color: '#ef4444' },
-    { name: 'Pending', value: 32, color: '#f59e0b' },
-  ];
-
-  const peakHoursData = [
-    { hour: '6-8 AM', trips: 45 },
-    { hour: '8-10 AM', trips: 128 },
-    { hour: '10-12 PM', trips: 96 },
-    { hour: '12-2 PM', trips: 87 },
-    { hour: '2-4 PM', trips: 134 },
-    { hour: '4-6 PM', trips: 198 },
-    { hour: '6-8 PM', trips: 156 },
-    { hour: '8-10 PM', trips: 89 },
-  ];
-
-  // KPI Cards Data
-  const kpiData = {
-    totalTrips: 1458,
-    totalRevenue: 72650,
-    avgWaitTime: 8.2,
-    assignmentRate: 94.3,
-    activeTaxis: 42,
-    satisfiedCustomers: 92,
-  };
-
-  // Table columns
-  const stationColumns = [
+  const columns: ColumnsType<RouteTaxi> = [
     {
-      title: 'Station',
-      dataIndex: 'name',
-      key: 'name',
-      render: (text:any) => <span className="font-medium">{text}</span>,
+      title: 'ROUTE',
+      dataIndex: 'Routes',
+      key: 'Routes',
+      width: '20%',
     },
     {
-      title: 'Total Trips',
-      dataIndex: 'trips',
-      key: 'trips',
-     // sorter: (a, b) => a.trips - b.trips,
+      title: 'AVAILABLE TAXIS',
+      dataIndex: 'Taxis',
+      key: 'Taxis',
+      align: 'center' as const,
+      width: '15%',
     },
     {
-      title: 'Revenue',
-      dataIndex: 'revenue',
-      key: 'revenue',
-      render: (text:any) => `$${text.toLocaleString()}`,
-      //sorter: (a, b) => a.revenue - b.revenue,
+      title: 'REGISTERED TAXIS',
+      dataIndex: 'RegisteredTaxis',
+      key: 'RegisteredTaxis',
+      align: 'center' as const,
+      width: '15%',
     },
     {
-      title: 'Efficiency',
-      dataIndex: 'efficiency',
-      key: 'efficiency',
-      render: (text:any) => (
-        <div className="flex items-center">
-          <Progress percent={text} size="small" strokeColor="#10b981" />
-          <span className="ml-2">{text}%</span>
-        </div>
-      ),
+      title: 'WAITING PASSENGERS',
+      dataIndex: 'WaitingCount',
+      key: 'WaitingCount',
+      align: 'center' as const,
+      width: '15%',
+      render: (value: number | null) => value ?? 0,
     },
     {
-      title: 'Status',
-      key: 'status',
-      render: (_:any, record:any) => (
-        <Tag color={record.efficiency > 90 ? 'success' : record.efficiency > 80 ? 'warning' : 'error'}>
-          {record.efficiency > 90 ? 'Excellent' : record.efficiency > 80 ? 'Good' : 'Needs Improvement'}
-        </Tag>
-      ),
+      title: 'DISPATCHER',
+      dataIndex: 'Dispatcher',
+      key: 'Dispatcher',
+      width: '20%',
+      render: (name) => name || '—',
     },
   ];
 
-  const recentTripsColumns = [
-    {
-      title: 'Trip ID',
-      dataIndex: 'id',
-      key: 'id',
-      render: (text:any) => <span className="text-blue-600">#{text}</span>,
-    },
-    {
-      title: 'Route',
-      dataIndex: 'route',
-      key: 'route',
-      render: (text:any) => <span className="font-medium">{text}</span>,
-    },
-    {
-      title: 'Dispatcher',
-      dataIndex: 'dispatcher',
-      key: 'dispatcher',
-    },
-    {
-      title: 'Taxi',
-      dataIndex: 'taxi',
-      key: 'taxi',
-    },
-    {
-      title: 'Time',
-      dataIndex: 'time',
-      key: 'time',
-    },
-    {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      render: (text:any) => {
-        const colors = {
-          Completed: 'green',
-          'In Progress': 'blue',
-          Pending: 'orange',
-          Cancelled: 'red',
-        };
-        return <Tag >{text}</Tag>;
-      },
-    },
-  ];
+  const filteredData = routeTaxiList.filter((item) =>
+    item.Routes.toLowerCase().includes(searchText.toLowerCase())
+  );
 
-  const recentTripsData = [
-    { id: 'TRP001', route: 'Mexico → Jemo', dispatcher: 'John D.', taxi: 'TAXI-789', time: '10:24 AM', status: 'Completed' },
-    { id: 'TRP002', route: 'Bole → Megenagna', dispatcher: 'Sarah M.', taxi: 'TAXI-456', time: '10:32 AM', status: 'In Progress' },
-    { id: 'TRP003', route: 'Sarbet → Mexico', dispatcher: 'Mike R.', taxi: 'TAXI-123', time: '10:45 AM', status: 'Completed' },
-    { id: 'TRP004', route: 'Jemo → Bole', dispatcher: 'Lisa T.', taxi: 'TAXI-987', time: '11:05 AM', status: 'Pending' },
-    { id: 'TRP005', route: 'Megenagna → Sarbet', dispatcher: 'Alex K.', taxi: 'TAXI-654', time: '11:20 AM', status: 'Completed' },
-  ];
+  const fetchTaxiAssignment = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
 
-  // Fetch stations data
-  useEffect(() => {
-    fetchStations();
-    fetchReportData();
-  }, []);
-
-  const fetchStations = async () => {
-    try {
-      // Replace with your API call
-      const mockStations = [
-        { id: 'all', name: 'All Stations' },
-        { id: 'mexico', name: 'Mexico' },
-        { id: 'jemo', name: 'Jemo' },
-        { id: 'bole', name: 'Bole' },
-        { id: 'megenagna', name: 'Megenagna' },
-        { id: 'sarbet', name: 'Sarbet' },
-      ];
-      //setStations(mockStations);
-    } catch (error) {
-      console.error('Error fetching stations:', error);
-    }
-  };
-
-  const fetchReportData = async () => {
     setLoading(true);
     try {
-      // Replace with your API call
-      setTimeout(() => {
-       // setReportData({ message: 'Report data loaded' });
-        setLoading(false);
-      }, 1000);
-    } catch (error) {
-      console.error('Error fetching report data:', error);
+      const res = await axios.get(
+        'http://localhost:5000/taxiAssignment/allStationInfo',
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setRouteTaxiList(res.data);
+    } catch (err) {
+      console.error('Failed to fetch station info:', err);
+    } finally {
       setLoading(false);
     }
   };
 
-//   const handleExport = (format) => {
-//     console.log(`Exporting as ${format}`);
-//     setExportModalVisible(false);
-//     // Add your export logic here
-//   };
+  useEffect(() => {
+    fetchTaxiAssignment();
+    const interval = setInterval(fetchTaxiAssignment, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
-  const ExportModal = () => (
-    <Modal
-      title="Export Report"
-      open={exportModalVisible}
-      onCancel={() => setExportModalVisible(false)}
-      footer={null}
-    >
-      <div className="space-y-4">
-        <p className="text-gray-600">Choose export format:</p>
-        <div className="grid grid-cols-2 gap-4">
-          <Button
-            icon={<DownloadOutlined />}
-            size="large"
-           // onClick={() => handleExport('PDF')}
-            className="flex flex-col items-center justify-center h-24"
-          >
-            <span className="text-lg font-medium">PDF</span>
-            <span className="text-gray-500 text-sm">For Printing</span>
-          </Button>
-          <Button
-            icon={<DownloadOutlined />}
-            size="large"
-           // onClick={() => handleExport('Excel')}
-            className="flex flex-col items-center justify-center h-24"
-          >
-            <span className="text-lg font-medium">Excel</span>
-            <span className="text-gray-500 text-sm">For Analysis</span>
-          </Button>
-          <Button
-            icon={<DownloadOutlined />}
-            size="large"
-           // onClick={() => handleExport('CSV')}
-            className="flex flex-col items-center justify-center h-24"
-          >
-            <span className="text-lg font-medium">CSV</span>
-            <span className="text-gray-500 text-sm">Raw Data</span>
-          </Button>
-          <Button
-            icon={<PrinterOutlined />}
-            size="large"
-            //onClick={() => handleExport('Print')}
-            className="flex flex-col items-center justify-center h-24"
-          >
-            <span className="text-lg font-medium">Print</span>
-            <span className="text-gray-500 text-sm">Direct Print</span>
-          </Button>
-        </div>
-      </div>
-    </Modal>
-  );
+  const handlePrint = () => {
+    const printContent = document.getElementById('printable-table');
+    const printWindow = window.open('', '_blank');
+
+    if (printWindow && printContent) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Taxi Assignment Report</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 40px; }
+              h1 { color: #333; border-bottom: 2px solid #1890ff; padding-bottom: 10px; }
+              .report-info { margin: 20px 0; color: #666; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+              th { background-color: #f5f5f5; text-align: left; padding: 12px; border: 1px solid #ddd; font-weight: bold; }
+              td { padding: 10px; border: 1px solid #ddd; }
+              .footer { margin-top: 30px; color: #999; font-size: 12px; text-align: center; }
+              .text-center { text-align: center; }
+              @page { size: A4 landscape; margin: 20mm; }
+              @media print {
+                body { margin: 0; }
+                table { page-break-inside: auto; }
+                tr { page-break-inside: avoid; page-break-after: auto; }
+              }
+            </style>
+          </head>
+          <body>
+            <h1>Taxi Assignment Report</h1>
+            <div class="report-info">
+              Generated on: ${new Date().toLocaleString()}<br>
+              Total Routes: ${filteredData.length}
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Route</th>
+                  <th>Available Taxis</th>
+                  <th>Registered Taxis</th>
+                  <th>Waiting Passengers</th>
+                  <th>Dispatcher</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${filteredData
+                  .map(
+                    (item) => `
+                  <tr>
+                    <td>${item.Routes}</td>
+                    <td class="text-center">${item.Taxis}</td>
+                    <td class="text-center">${item.RegisteredTaxis}</td>
+                    <td class="text-center">${item.WaitingCount}</td>
+                    <td>${item.Dispatcher || '—'}</td>
+                  </tr>
+                `
+                  )
+                  .join('')}
+              </tbody>
+            </table>
+            <div class="footer">
+              Report generated by TaxiLink System
+            </div>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 250);
+    } else {
+      window.print();
+    }
+  };
+
+  const handleExportCSV = () => {
+    const headers = [
+      'Route',
+      'Available Taxis',
+      'Registered Taxis',
+      'Waiting Passengers',
+      'Dispatcher',
+    ];
+
+    const csvRows = [];
+
+    csvRows.push(headers.join(','));
+
+    filteredData.forEach((item) => {
+      const row = [
+        `"${item.Routes.replace(/"/g, '""')}"`,
+        item.Taxis,
+        item.RegisteredTaxis,
+        item.WaitingCount,
+        `"${(item.Dispatcher || 'N/A').replace(/"/g, '""')}"`,
+      ];
+      csvRows.push(row.join(','));
+    });
+
+    const csvString = csvRows.join('\n');
+
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `taxi-assignment-${
+      new Date().toISOString().split('T')[0]
+    }.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleExportExcel = async () => {
+    try {
+      const XLSX = await import('xlsx');
+
+      const excelData = filteredData.map((item) => ({
+        Route: item.Routes,
+        'Available Taxis': item.Taxis,
+        'Registered Taxis': item.RegisteredTaxis,
+        'Waiting Passengers': item.WaitingCount,
+        Dispatcher: item.Dispatcher || 'N/A',
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Station Report');
+
+      const maxWidth = filteredData.reduce(
+        (w, r) => Math.max(w, r.Routes.length),
+        10
+      );
+      if (worksheet['!cols'] === undefined) worksheet['!cols'] = [];
+      worksheet['!cols'] = [
+        { wch: maxWidth },
+        { wch: 15 },
+        { wch: 15 },
+        { wch: 18 },
+        { wch: 15 },
+      ];
+
+      XLSX.writeFile(
+        workbook,
+        `station-report-${new Date().toISOString().split('T')[0]}.xlsx`
+      );
+    } catch (error) {
+      console.error('Error exporting Excel:', error);
+      alert('Excel export failed, downloading CSV instead');
+      handleExportCSV();
+    }
+  };
+
+  const handleExportJSON = () => {
+    const jsonString = JSON.stringify(filteredData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `taxi-assignment-${
+      new Date().toISOString().split('T')[0]
+    }.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleExportPDF = () => {
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4',
+    });
+
+    doc.setFontSize(18);
+    doc.text('Taxi Assignment Report', 14, 15);
+
+    doc.setFontSize(10);
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 22);
+
+    const tableColumn = [
+      'Route',
+      'Available Taxis',
+      'Registered Taxis',
+      'Waiting Passengers',
+      'Dispatcher',
+    ];
+
+    const tableRows = filteredData.map((item) => [
+      item.Routes,
+      item.Taxis ?? 0,
+      item.RegisteredTaxis ?? 0,
+      item.WaitingCount ?? 0,
+      item.Dispatcher || '—',
+    ]);
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 28,
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [24, 144, 255] },
+      columnStyles: {
+        1: { halign: 'center' },
+        2: { halign: 'center' },
+        3: { halign: 'center' },
+      },
+    });
+
+    doc.save(`taxi-assignment-${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
+  const exportMenuItems: MenuProps['items'] = [
+    {
+      key: 'excel',
+      label: 'Export as Excel',
+      onClick: handleExportExcel,
+    },
+    {
+      key: 'pdf',
+      label: 'Export as PDF',
+      onClick: handleExportPDF,
+    },
+    {
+      key: 'json',
+      label: 'Export as JSON',
+      onClick: handleExportJSON,
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800">Station Reports</h1>
-            <p className="text-gray-600">Monitor performance, trips, and dispatcher efficiency</p>
-          </div>
+    <>
+      <Card className="shadow-sm border-0 mb-6" bodyStyle={{ padding: 16 }}>
+        <div className="flex justify-between items-center">
+          <Input
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            placeholder="Search by route name..."
+            prefix={<CiSearch className="text-gray-400" />}
+            allowClear
+            className="rounded-lg h-10"
+            style={{ width: 300 }}
+          />
+
           <div className="flex space-x-3">
             <Button
-              icon={<ReloadOutlined />}
-              onClick={fetchReportData}
-              loading={loading}
+              icon={<PrinterOutlined />}
+              onClick={handlePrint}
+              className="flex items-center"
             >
-              Refresh
+              Print
             </Button>
-            <Button
-              type="primary"
-              icon={<DownloadOutlined />}
-              onClick={() => setExportModalVisible(true)}
-            >
-              Export
-            </Button>
+
+            <Dropdown menu={{ items: exportMenuItems }} placement="bottomRight">
+              <Button
+                type="primary"
+                icon={<DownloadOutlined />}
+                className="flex items-center"
+              >
+                Export <DownOutlined className="ml-1" />
+              </Button>
+            </Dropdown>
           </div>
         </div>
-
-        {/* Filters */}
-        <Card className="mb-6">
-          <div className="flex flex-wrap gap-4 items-end">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
-              {/* <RangePicker
-                value={dateRange}
-                onChange={setDateRange}
-                className="w-64"
-              /> */}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Station</label>
-              <Select
-                value={selectedStation}
-                onChange={setSelectedStation}
-                className="w-48"
-              >
-                {/* {stations.map(station => (
-                  <Option 
-                  key={station.id} value={station.id}>
-                    {station.name}
-                  </Option>
-                ))} */}
-              </Select>
-            </div>
-            {/* <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Report Type</label>
-              <Radio.Group value={reportType} onChange={(e) => setReportType(e.target.value)}>
-                <Radio.Button value="daily">Daily</Radio.Button>
-                <Radio.Button value="weekly">Weekly</Radio.Button>
-                <Radio.Button value="monthly">Monthly</Radio.Button>
-              </Radio.Group>
-            </div> */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Time Frame</label>
-              <Select
-                value={timeFrame}
-                onChange={setTimeFrame}
-                className="w-32"
-              >
-                <Option value="today">Today</Option>
-                <Option value="week">This Week</Option>
-                <Option value="month">This Month</Option>
-                <Option value="quarter">This Quarter</Option>
-                <Option value="year">This Year</Option>
-              </Select>
-            </div>
-            <Button
-              type="primary"
-              icon={<FilterOutlined />}
-            >
-              Apply Filters
-            </Button>
-          </div>
-        </Card>
-      </div>
-
-      {/* KPI Cards */}
-      {/* <Row gutter={[16, 16]} className="mb-8">
-        <Col xs={24} sm={12} lg={6}>
-          <Card className="shadow-sm hover:shadow-md transition-shadow">
-            <Statistic
-              title="Total Trips"
-              value={kpiData.totalTrips}
-              prefix={<TeamOutlined className="text-blue-500" />}
-              suffix={<span className="text-green-500 text-sm">+12%</span>}
-            />
-            <div className="mt-2 text-sm text-gray-500">Completed trips this week</div>
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card className="shadow-sm hover:shadow-md transition-shadow">
-            <Statistic
-              title="Total Revenue"
-              value={kpiData.totalRevenue}
-              prefix={<DollarOutlined className="text-green-500" />}
-              formatter={(value) => `$${value.toLocaleString()}`}
-              suffix={<span className="text-green-500 text-sm">+8.5%</span>}
-            />
-            <div className="mt-2 text-sm text-gray-500">Revenue generated</div>
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card className="shadow-sm hover:shadow-md transition-shadow">
-            <Statistic
-              title="Avg Wait Time"
-              value={kpiData.avgWaitTime}
-              prefix={<ScheduleOutlined className="text-purple-500" />}
-              suffix="mins"
-            />
-            <div className="mt-2">
-              <Progress
-                percent={82}
-                size="small"
-                strokeColor={kpiData.avgWaitTime < 10 ? '#10b981' : '#f59e0b'}
-              />
-            </div>
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card className="shadow-sm hover:shadow-md transition-shadow">
-            <Statistic
-              title="Assignment Rate"
-              value={kpiData.assignmentRate}
-              prefix={<CheckCircleOutlined className="text-emerald-500" />}
-              suffix="%"
-            />
-            <div className="mt-2 flex items-center text-sm">
-              <RiseOutlined className="text-green-500 mr-1" />
-              <span className="text-green-500">+2.3% from last week</span>
-            </div>
-          </Card>
-        </Col>
-      </Row> */}
-
-      {/* Charts Section */}
-      <Row gutter={[16, 16]} className="mb-8">
-        <Col xs={24} lg={12}>
-          <Card 
-            title="Revenue Trend" 
-            extra={<Button type="text" icon={<EyeOutlined />}>Details</Button>}
-            className="h-full"
-          >
-            <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenueData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="date" stroke="#6b7280" />
-                  <YAxis stroke="#6b7280" />
-                  <Tooltip 
-                    formatter={(value) => [`$${value}`, 'Revenue']}
-                    labelFormatter={(label) => `Date: ${label}`}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="revenue" 
-                    stroke="#3b82f6" 
-                    fill="#93c5fd" 
-                    fillOpacity={0.6}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-        </Col>
-        <Col xs={24} lg={12}>
-          <Card 
-            title="Station Performance"
-            extra={<Button type="text" icon={<EyeOutlined />}>Compare</Button>}
-            className="h-full"
-          >
-            <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={stationPerformanceData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="name" stroke="#6b7280" />
-                  <YAxis stroke="#6b7280" />
-                  <Tooltip 
-                    formatter={(value, name) => {
-                      if (name === 'revenue') return [`$${value}`, 'Revenue'];
-                      if (name === 'efficiency') return [`${value}%`, 'Efficiency'];
-                      return [value, name];
-                    }}
-                  />
-                  <Legend />
-                  <Bar dataKey="trips" name="Trips" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="revenue" name="Revenue" fill="#10b981" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Tabs Section */}
-      <Card className="mb-8">
-        <Tabs defaultActiveKey="1">
-          <TabPane tab="Station Overview" key="1">
-            <Table
-              columns={stationColumns}
-              dataSource={stationPerformanceData}
-              pagination={false}
-              rowKey="name"
-            />
-          </TabPane>
-          <TabPane tab="Trip Status" key="2">
-            <Row gutter={[32, 32]}>
-              <Col xs={24} md={12}>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={tripStatusData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={(entry) => `${entry.name}: ${entry.value}`}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {tripStatusData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value) => [value, 'Trips']} />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </Col>
-              <Col xs={24} md={12}>
-                <h3 className="text-lg font-medium mb-4">Peak Hours Analysis</h3>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={peakHoursData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis dataKey="hour" stroke="#6b7280" />
-                      <YAxis stroke="#6b7280" />
-                      <Tooltip />
-                      <Legend />
-                      <Line 
-                        type="monotone" 
-                        dataKey="trips" 
-                        stroke="#f59e0b" 
-                        strokeWidth={2}
-                        dot={{ r: 4 }}
-                        activeDot={{ r: 6 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </Col>
-            </Row>
-          </TabPane>
-          {/* <TabPane tab="Recent Trips" key="3">
-            <Table
-              columns={recentTripsColumns}
-              dataSource={recentTripsData}
-              pagination={{ pageSize: 5 }}
-              rowKey="id"
-            />
-          </TabPane> */}
-          {/* <TabPane tab="Dispatcher Performance" key="4">
-            <div className="text-center py-12">
-              <Empty
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-                description={
-                  <span className="text-gray-500">
-                    Dispatcher performance data will be available soon
-                  </span>
-                }
-              />
-            </div>
-          </TabPane> */}
-        </Tabs>
       </Card>
 
-     
-
-      {/* Footer Actions */}
-      <div className="mt-8 flex justify-center space-x-4">
-        <Button
-          icon={<PrinterOutlined />}
-          size="large"
-          onClick={() => window.print()}
-        >
-          Print Report
-        </Button>
-        <Button
-          type="primary"
-          icon={<DownloadOutlined />}
-          size="large"
-          onClick={() => setExportModalVisible(true)}
-        >
-          Download Full Report
-        </Button>
-      </div>
-
-      {/* Export Modal */}
-      <ExportModal />
-
-      {/* Last Updated */}
-      <div className="mt-8 text-center text-gray-500 text-sm">
-        Last updated: {new Date().toLocaleString()} | Data refreshes every 5 minutes
-      </div>
-    </div>
+      <Card
+        className="shadow-sm border-0"
+        bodyStyle={{ padding: 0 }}
+        id="printable-table"
+        title={
+          <div className="text-lg font-medium">
+            Report Overview
+            <span className="text-sm text-gray-500 ml-2">
+              ({filteredData.length} routes)
+            </span>
+          </div>
+        }
+      >
+        <Table
+          columns={columns}
+          dataSource={filteredData}
+          rowKey="id"
+          loading={loading}
+          size="middle"
+          bordered={false}
+          pagination={{
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total) => `Total ${total} routes`,
+            pageSizeOptions: ['10', '20', '50', '100'],
+            defaultPageSize: 10,
+            responsive: true,
+            className: 'px-4',
+          }}
+          scroll={{ x: true }}
+          className="custom-table"
+        />
+      </Card>
+    </>
   );
-};
-
-export default ReportsPage;
+}

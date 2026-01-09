@@ -1,185 +1,22 @@
-// import { Button, Input, Table } from "antd";
-// import { useEffect, useState } from "react";
-// import CreateStationAdmin from "../Components/modals/CreateStationAdmin";
-// import { CiSearch } from "react-icons/ci";
-// import { RiDeleteBin6Line } from "react-icons/ri";
-// import EditStationAdminModal from "../Components/modals/EditStationAdminModal";
-// import { TbEdit } from "react-icons/tb";
-// import axios from "axios";
-// type StationAdmin = {
-//   id: number;
-//   FullName: string;
-//   Email: string;
-//   PhoneNumber: number;
-//    UserName: string;
-//    Stations:string;
-// };
-// export default function Stations () {
-//     const [IsCreateStationAdminOpen, setIsCreateStationAdminOpen] = useState(false);
-//      const [searchText, setSearchText] = useState("");
-//     const [EditingStationAdmin, setEditingStationAdmin] = useState<StationAdmin | null>(null);
-
-//      const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-//        const [StationAdmin , setStationAdmin ] = useState<StationAdmin []>([]);
-//   const showCreateStationAdmin = () => {
-//    setIsCreateStationAdminOpen(true);
-//   };
-
-//   const closeCreateStationAdmin = () => {
-//     setIsCreateStationAdminOpen(false);
-//   };
-//     const handleSearch = (value: string) => {
-//     setSearchText(value);
-  
-//   };
-//   const handleDelete = async (id: number) => {
-//   if (!confirm("Are you sure you want to delete this station?")) return;
-
-//   try {
-//     await axios.delete(`http://localhost:5000/stationadmins/${id}`);
-//     setStationAdmin ((prev) => prev.filter((s) => s.id !== id));
-//     alert("✅ Station deleted successfully");
-//   } catch (err) {
-//     console.error(err);
-//     alert("Failed to delete station");
-//   }
-// };
-
-// const handleEdit = (stationadmin: StationAdmin) => {
-//   setEditingStationAdmin(stationadmin);
-//   setIsEditModalOpen(true);
-// };
-
-// const closeEditModal = () => {
-//   setIsEditModalOpen(false);
-//     setEditingStationAdmin(null);
-// };
-// const handleStationUpdated = (updatedStation:StationAdmin) => {
-//   setStationAdmin((prev) =>
-//     prev.map((s) => (s.id === updatedStation.id ? updatedStation : s))
-//   );
-// };
-//    const columns = [
-//     {
-//       title: 'Full Name',
-//        dataIndex: "FullName",
-//       key: 'name',
-//     },
-//     {
-//       title: 'Email',
-//       dataIndex: 'Email',
-//       key: 'city',
-//     },
-//     {
-//       title: 'Phone Number',
-//       dataIndex: 'PhoneNumber',
-//       key: 'location',
-//     },
-//     {
-//      title: 'UserName',
-//       dataIndex: 'UserName',
-//       key: 'UserName',
-//     },
-//      {
-//      title: 'Stations',
-//       dataIndex: 'Stations',
-//       key: 'Stations',
-//     },
-//      {
-//       title: 'Actions',
-//       key: 'actions',
-//        render: (_: any, record: StationAdmin ) => (
-//             <div className="flex gap-2">
-//         <Button
-//           type="primary"
-//           onClick={() => handleEdit(record)}
-//         >
-//           <TbEdit />
-        
-//         </Button>
-//           {isEditModalOpen && EditingStationAdmin && (
-//     <EditStationAdminModal
-//       isOpen={isEditModalOpen}
-//       handleCancel={closeEditModal}
-//       StationAdmin={EditingStationAdmin}
-//       onUpdated={handleStationUpdated}
-//     />
-//   )}
-//         <Button
-//           type="primary"
-//           danger
-//           onClick={() => handleDelete(record.id)}
-//         >
-//           <RiDeleteBin6Line />
-//         </Button>
-//       </div>
-          
-//        )
-//     },
-//   ];
-//  const filteredStationAdmins = StationAdmin.filter(
-//     (stationAdmin) =>
-//        stationAdmin.FullName.toLowerCase().includes(searchText.toLowerCase()) 
-//      );
-    
-    
-//      const fetchStationAdmins = async () => {
-//     try {
-//       // ✅ Call filtered route for logged-in station admin
-//       const token = localStorage.getItem("token");
-//       const res = await axios.get("http://localhost:5000/stationAdmins", {
-//         headers: { Authorization: `Bearer ${token}` }
-//       });
-//       setStationAdmin(res.data);
-//     } catch (err) {
-//       console.error("Failed to fetch stations:", err);
-//     }
-//   };
-//    useEffect(() => {
-//       fetchStationAdmins ();
-//     }, []);
-// return(
-    
-//     <>
-//    <div className=" flex justify-end">
-//           <Input
-//             value={searchText}
-//             onChange={(e) => handleSearch(e.target.value)}
-//             placeholder="Search stations"
-//             className="pl-10 rounded-2xl  w-[200px] h-11  mt-5"
-//           prefix={<CiSearch className="text-gray-400" />}
-//           />
-//     <Button
-//      className="mt-5 "
-//     onClick={showCreateStationAdmin}
-//     >Create Station Admin
-//     </Button>
-//     {IsCreateStationAdminOpen && <CreateStationAdmin isModalOpen={IsCreateStationAdminOpen} handleCancel={closeCreateStationAdmin}  onStationAdminCreated={fetchStationAdmins}/>}
-//    </div>
-//      <div>
-//     <Table
-//     columns={columns}
-//      dataSource={filteredStationAdmins}
-//       rowKey="id"
-//     />
-//    </div>
-//     </>
-// )
-
-
-// }
-
-
-import { Button, Input, Table, Tag, Card, Avatar, Space, Popconfirm, message, Tooltip, Badge } from "antd";
-import { useEffect, useState } from "react";
-import CreateStationAdmin from "../Components/modals/CreateStationAdmin";
-import { CiSearch, CiMail, CiPhone } from "react-icons/ci";
-import { RiDeleteBin6Line } from "react-icons/ri";
-import EditStationAdminModal from "../Components/modals/EditStationAdminModal";
-import { TbEdit, TbUser, TbBuildingEstate } from "react-icons/tb";
-import { MdOutlineAdminPanelSettings } from "react-icons/md";
-import axios from "axios";
-import { useNavigate } from "react-router-dom"; 
+import {
+  Button,
+  Input,
+  Table,
+  Tag,
+  Card,
+  Space,
+  message,
+  Tooltip,
+  Badge,
+} from 'antd';
+import { useEffect, useState } from 'react';
+import CreateStationAdmin from '../Components/modals/CreateStationAdmin';
+import { CiSearch, CiMail, CiPhone } from 'react-icons/ci';
+import EditStationAdminModal from '../Components/modals/EditStationAdminModal';
+import { TbEdit, TbUser, TbBuildingEstate } from 'react-icons/tb';
+import { MdOutlineAdminPanelSettings } from 'react-icons/md';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
 
 type StationAdmin = {
@@ -192,13 +29,15 @@ type StationAdmin = {
 };
 
 export default function Stations() {
-  const [IsCreateStationAdminOpen, setIsCreateStationAdminOpen] = useState(false);
-  const [searchText, setSearchText] = useState("");
-  const [EditingStationAdmin, setEditingStationAdmin] = useState<StationAdmin | null>(null);
+  const [IsCreateStationAdminOpen, setIsCreateStationAdminOpen] =
+    useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [EditingStationAdmin, setEditingStationAdmin] =
+    useState<StationAdmin | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [StationAdmin, setStationAdmin] = useState<StationAdmin[]>([]);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
   const showCreateStationAdmin = () => {
     setIsCreateStationAdminOpen(true);
   };
@@ -210,19 +49,6 @@ export default function Stations() {
   const handleSearch = (value: string) => {
     setSearchText(value);
   };
-
-  const handleDelete = async (id: number) => {
-    try {
-      await axios.delete(`http://localhost:5000/stationadmins/${id}`);
-      setStationAdmin((prev) => prev.filter((s) => s.id !== id));
-      message.success("Station admin deleted successfully");
-    } catch (err) {
-      console.error(err);
-      message.error("Failed to delete station admin");
-    }
-  };
-   
-
 
   const handleEdit = (stationadmin: StationAdmin) => {
     setEditingStationAdmin(stationadmin);
@@ -238,10 +64,8 @@ export default function Stations() {
     setStationAdmin((prev) =>
       prev.map((s) => (s.id === updatedStation.id ? updatedStation : s))
     );
-    message.success("Station admin updated successfully");
+    message.success('Station admin updated successfully');
   };
-
-  
 
   const columns: ColumnsType<StationAdmin> = [
     {
@@ -251,12 +75,10 @@ export default function Stations() {
           <span>FULL NAME</span>
         </div>
       ),
-      dataIndex: "FullName",
+      dataIndex: 'FullName',
       key: 'name',
       responsive: ['md'],
-      render: (text) => (
-        <div className="font-medium text-gray-800">{text}</div>
-      ),
+      render: (text) => <div className="font-medium text-gray-800">{text}</div>,
     },
     {
       title: (
@@ -287,8 +109,7 @@ export default function Stations() {
       responsive: ['md'],
       render: (text) => (
         <div className="flex items-center text-gray-600">
-          <CiPhone className="mr-2 text-gray-400" />
-          {text}
+          <CiPhone className="mr-2 text-gray-400" />0{text}
         </div>
       ),
     },
@@ -318,22 +139,24 @@ export default function Stations() {
       dataIndex: 'Stations',
       key: 'stations',
       responsive: ['md'],
-     render: (text) => (
+      render: (text) => (
         <Tag color="green" className="text-xs">
           {text}
         </Tag>
       ),
-       
     },
     {
       title: 'ACTIONS',
       key: 'actions',
       width: 120,
-      render: (_: any, record: StationAdmin ) => (
-        <Space size="small" className="flex flex-col sm:flex-row gap-1"  onClick={(e) => {
-           
+      render: (_: any, record: StationAdmin) => (
+        <Space
+          size="small"
+          className="flex flex-col sm:flex-row gap-1"
+          onClick={(e) => {
             e.stopPropagation();
-          }}>
+          }}
+        >
           <Tooltip title="Edit admin">
             <Button
               type="text"
@@ -342,14 +165,14 @@ export default function Stations() {
               onClick={() => handleEdit(record)}
               className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
             />
-             {isEditModalOpen && EditingStationAdmin && (
-    <EditStationAdminModal
-      isOpen={isEditModalOpen}
-      handleCancel={closeEditModal}
-      StationAdmin={EditingStationAdmin}
-       onUpdated={handleStationUpdated}
-    />
-  )}
+            {isEditModalOpen && EditingStationAdmin && (
+              <EditStationAdminModal
+                isOpen={isEditModalOpen}
+                handleCancel={closeEditModal}
+                StationAdmin={EditingStationAdmin}
+                onUpdated={handleStationUpdated}
+              />
+            )}
           </Tooltip>
         </Space>
       ),
@@ -366,14 +189,14 @@ export default function Stations() {
   const fetchStationAdmins = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.get("http://localhost:5000/stationAdmins", {
-        headers: { Authorization: `Bearer ${token}` }
+      const token = localStorage.getItem('token');
+      const res = await axios.get('http://localhost:5000/stationAdmins', {
+        headers: { Authorization: `Bearer ${token}` },
       });
       setStationAdmin(res.data);
     } catch (err) {
-      console.error("Failed to fetch station admins:", err);
-      message.error("Failed to load station admins");
+      console.error('Failed to fetch station admins:', err);
+      message.error('Failed to load station admins');
     } finally {
       setLoading(false);
     }
@@ -383,41 +206,37 @@ export default function Stations() {
     fetchStationAdmins();
   }, []);
 
-
-    const handleRowClick = (record: StationAdmin) => {
+  const handleRowClick = (record: StationAdmin) => {
     navigate(`/admin/StationAdmins/${record.id}`);
   };
 
   return (
     <>
       <Card
-        className="shadow-sm border-0 mt-600 gap-400"
-        bodyStyle={{ padding: '20px' }}
+        className="shadow-sm border-0 mb-4 md:mb-6"
+        bodyStyle={{ padding: '16px' }}
       >
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 ">
-          
-        
-            <Input
-              value={searchText}
-              onChange={(e) => handleSearch(e.target.value)}
-              placeholder="Search by name, email, or username..."
-              className="rounded-lg h-10 border-gray-300 focus:border-blue-500"
-              prefix={<CiSearch className="text-gray-400" />}
-              allowClear
-              style={{ minWidth: '250px' }}
-            />
-            
-            <Button
-              type="primary"
-              onClick={showCreateStationAdmin}
-              icon={<MdOutlineAdminPanelSettings />}
-              className="bg-gradient-to-r from-blue-600 to-blue-500 border-0 hover:from-blue-700 hover:to-blue-600 shadow-sm h-10 ml-150"
-              size="middle"
-            >
-              <span className="hidden sm:inline">Create Admin</span>
-              
-            </Button>
-         
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+          <Input
+            value={searchText}
+            onChange={(e) => handleSearch(e.target.value)}
+            placeholder="Search users..."
+            className="rounded-lg h-10 border-gray-300 focus:border-blue-500 w-full sm:flex-1 sm:max-w-sm md:max-w-md"
+            prefix={<CiSearch className="text-gray-400" />}
+            allowClear
+            size="middle"
+          />
+
+          <Button
+            type="primary"
+            onClick={showCreateStationAdmin}
+            icon={<MdOutlineAdminPanelSettings />}
+            className="bg-gradient-to-r from-blue-600 to-blue-500 border-0 hover:from-blue-700 hover:to-blue-600 shadow-sm h-10 w-full sm:w-auto"
+            size="middle"
+          >
+            <span className="hidden sm:inline">Create Admin</span>
+            <span className="sm:hidden">+ New Admin</span>
+          </Button>
         </div>
       </Card>
 
@@ -434,9 +253,7 @@ export default function Stations() {
                 color="blue"
                 style={{ fontSize: '12px' }}
               />
-              <span className="text-gray-600 font-medium">
-                Total Admins
-              </span>
+              <span className="text-gray-600 font-medium">Total Admins</span>
             </div>
             <div className="text-sm text-gray-500">
               {filteredStationAdmins.length} of {StationAdmin.length} displayed
@@ -451,9 +268,9 @@ export default function Stations() {
           loading={loading}
           onRow={(record) => ({
             onClick: () => handleRowClick(record),
-            style: { 
+            style: {
               cursor: 'pointer',
-              transition: 'background-color 0.2s'
+              transition: 'background-color 0.2s',
             },
             onMouseEnter: (event: React.MouseEvent) => {
               const row = event.currentTarget as HTMLElement;
@@ -462,18 +279,17 @@ export default function Stations() {
             onMouseLeave: (event: React.MouseEvent) => {
               const row = event.currentTarget as HTMLElement;
               row.style.backgroundColor = '';
-            }
+            },
           })}
           pagination={{
             showSizeChanger: true,
             showQuickJumper: true,
-            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} admins`,
-            className: "px-4 md:px-6",
+            className: 'px-4 md:px-6',
             responsive: true,
           }}
           scroll={{ x: true }}
           className="ant-table-striped"
-          rowClassName={(_, index) => index % 2 === 0 ? 'bg-gray-50/50' : ''}
+          rowClassName={(_, index) => (index % 2 === 0 ? 'bg-gray-50/50' : '')}
           style={{
             backgroundColor: 'transparent',
           }}
@@ -487,7 +303,6 @@ export default function Stations() {
         />
       </Card>
 
-      {/* Modals */}
       {IsCreateStationAdminOpen && (
         <CreateStationAdmin
           isModalOpen={IsCreateStationAdminOpen}

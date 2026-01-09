@@ -1,6 +1,6 @@
-import { Modal, Select, Form, Button } from "antd";
-import axios from "axios";
-import { useEffect, useState } from "react";
+import { Modal, Select, Button } from 'antd';
+import axios from 'axios';
+import { useEffect, useState } from 'react';
 
 type Props = {
   isOpen: boolean;
@@ -9,13 +9,12 @@ type Props = {
   onRouteSelected: (routeId: number) => void;
 };
 
-export default function SelectRouteModal({ 
-  isOpen, 
-  onClose, 
-  excludeRouteId, 
-  onRouteSelected 
+export default function SelectRouteModal({
+  isOpen,
+  onClose,
+  excludeRouteId,
+  onRouteSelected,
 }: Props) {
-
   const [routes, setRoutes] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -23,7 +22,7 @@ export default function SelectRouteModal({
     try {
       setLoading(true);
 
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem('token');
 
       const res = await axios.get(
         `http://localhost:5000/routes/other/${excludeRouteId}`,

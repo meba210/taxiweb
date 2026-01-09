@@ -1,15 +1,25 @@
-
-import { Modal, Select, Form, Button, Checkbox, message, Card, Tag, Space, Alert } from "antd";
-import { useEffect, useState } from "react";
-import axios from "axios";
-import { FaArrowRightLong, FaTaxi, FaRoute } from "react-icons/fa6";
-import { IoCarSport } from "react-icons/io5";
-import { FaMapMarkerAlt } from "react-icons/fa";
+import {
+  Modal,
+  Select,
+  Form,
+  Button,
+  Checkbox,
+  message,
+  Card,
+  Tag,
+  Space,
+  Alert,
+} from 'antd';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+import { FaArrowRightLong, FaTaxi, FaRoute } from 'react-icons/fa6';
+import { IoCarSport } from 'react-icons/io5';
+import { FaMapMarkerAlt } from 'react-icons/fa';
 type Props = {
   isModalOpen: boolean;
   onClose: () => void;
   routeId: number;
-  routeName: string;     
+  routeName: string;
   onAssigned: () => void;
 };
 
@@ -26,26 +36,26 @@ export default function AssignTaxiModal({
   const [routeModalOpen, setRouteModalOpen] = useState(false);
   const [selectedRoute, setSelectedRoute] = useState<number | null>(null);
 
-  // Fetch taxis for THIS route (by route name) - EXACT SAME LOGIC
   const fetchQueue = async () => {
     try {
-      const token = localStorage.getItem("token");
- 
+      const token = localStorage.getItem('token');
+
       const res = await axios.get(
-         `http://localhost:5000/assignTaxis?route=${encodeURIComponent(routeName)}`,
+        `http://localhost:5000/assignTaxis?route=${encodeURIComponent(
+          routeName
+        )}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       setQueue(res.data);
     } catch (err) {
-      console.error("Failed to fetch taxis:", err);
+      console.error('Failed to fetch taxis:', err);
     }
   };
 
-  // Fetch all routes EXCEPT current - EXACT SAME LOGIC
   const fetchRoutes = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem('token');
 
       const res = await axios.get(`http://localhost:5000/routes`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -53,100 +63,75 @@ export default function AssignTaxiModal({
 
       setRoutes(res.data.filter((r: any) => r.id !== routeId));
     } catch (err) {
-      console.error("Failed to fetch routes:", err);
+      console.error('Failed to fetch routes:', err);
     }
   };
 
-  // EXACT SAME LOGIC
   useEffect(() => {
     if (isModalOpen) {
-      fetchQueue();  
+      fetchQueue();
       fetchRoutes();
       form.resetFields();
     }
   }, [isModalOpen, routeName, routeId]);
 
-  // EXACT SAME LOGIC
   const openRouteModal = async () => {
     await form.validateFields();
     setRouteModalOpen(true);
   };
 
- 
-  // const handleFinalAssign = async () => {
-  //   try {
-  //     const values = form.getFieldsValue();
-  //     const token = localStorage.getItem("token");
-  //     const res = await axios.post("http://localhost:5000/assignTaxis", {
-  //       taxi_ids: values.taxi_ids,
-  //       to_route: selectedRoute,
-  //       from_route: routeName, 
-  //     },
-  //     {
-  //       headers: { Authorization: `Bearer ${token}` },
-  //     });
-      
-  //     message.success(res.data.message || "Taxi assigned successfully!");
-  //     onAssigned();
-  //     onClose();
-  //     setRouteModalOpen(false);
-  //   } catch (err) {
-  //     console.error("Assignment failed:", err);
-  //   }
-  // };
+  const handleFinalAssign = async () => {
+    try {
+      const values = form.getFieldsValue();
+      const token = localStorage.getItem('token');
 
-// EXACT SAME LOGIC - but with status update
-const handleFinalAssign = async () => {
-  try {
-    const values = form.getFieldsValue();
-    const token = localStorage.getItem("token");
-    
-    // 1. FIRST: Update status of each selected taxi to 'assigned' in taxi_queue
-    for (const taxiId of values.taxi_ids) {
-      try {
-        await axios.put(
-          `http://localhost:5000/taxi-queue/${taxiId}/status`,
-          { status: 'assigned' },
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        console.log(`Updated taxi ${taxiId} status to 'assigned'`);
-      } catch (statusErr) {
-        console.error(`Failed to update status for taxi ${taxiId}:`, statusErr);
-        // Continue with assignment even if status update fails
+      for (const taxiId of values.taxi_ids) {
+        try {
+          await axios.put(
+            `http://localhost:5000/taxi-queue/${taxiId}/status`,
+            { status: 'assigned' },
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+        } catch (statusErr) {
+          console.error(
+            `Failed to update status for taxi ${taxiId}:`,
+            statusErr
+          );
+        }
       }
+
+      const res = await axios.post(
+        'http://localhost:5000/assignTaxis',
+        {
+          taxi_ids: values.taxi_ids,
+          to_route: selectedRoute,
+          from_route: routeName,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      message.success(res.data.message || 'Taxi assigned successfully!');
+      onAssigned();
+      onClose();
+      setRouteModalOpen(false);
+    } catch (err) {
+      console.error('Assignment failed:', err);
+      message.error('Failed to assign taxis');
     }
-    
-    // 2. THEN: Assign taxis to the new route (your existing logic)
-    const res = await axios.post("http://localhost:5000/assignTaxis", {
-      taxi_ids: values.taxi_ids,
-      to_route: selectedRoute,
-      from_route: routeName, 
-    },
-    {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    
-    message.success(res.data.message || "Taxi assigned successfully!");
-    onAssigned();
-    onClose();
-    setRouteModalOpen(false);
-  } catch (err) {
-    console.error("Assignment failed:", err);
-    message.error("Failed to assign taxis");
-  }
-};
+  };
 
   return (
     <>
-      {/* First Modal - Only visual enhancements */}
       <Modal
         title={
           <Space align="center">
-            <FaTaxi style={{ color: "#1890ff", fontSize: "18px" }} />
-            <span style={{ fontSize: "18px", fontWeight: 600 }}>
-              Taxis in <span style={{ color: "#1890ff" }}>{routeName}</span>
+            <FaTaxi style={{ color: '#1890ff', fontSize: '18px' }} />
+            <span style={{ fontSize: '18px', fontWeight: 600 }}>
+              Taxis in <span style={{ color: '#1890ff' }}>{routeName}</span>
             </span>
             <Tag color="blue" style={{ marginLeft: 8 }}>
               {queue.length} available
@@ -156,14 +141,18 @@ const handleFinalAssign = async () => {
         open={isModalOpen}
         onCancel={onClose}
         footer={[
-          <Button key="cancel" onClick={onClose} style={{ borderRadius: "6px" }}>
+          <Button
+            key="cancel"
+            onClick={onClose}
+            style={{ borderRadius: '6px' }}
+          >
             Cancel
           </Button>,
-          <Button 
-            key="assign" 
-            type="primary" 
+          <Button
+            key="assign"
+            type="primary"
             onClick={openRouteModal}
-            style={{ borderRadius: "6px" }}
+            style={{ borderRadius: '6px' }}
             icon={<FaArrowRightLong />}
           >
             Assign To Route
@@ -171,82 +160,100 @@ const handleFinalAssign = async () => {
         ]}
         width={520}
         styles={{
-          body: { paddingTop: "16px" },
-          header: { borderBottom: "1px solid #f0f0f0", padding: "16px 24px" },
-          footer: { borderTop: "1px solid #f0f0f0", padding: "16px 24px" }
+          body: { paddingTop: '16px' },
+          header: { borderBottom: '1px solid #f0f0f0', padding: '16px 24px' },
+          footer: { borderTop: '1px solid #f0f0f0', padding: '16px 24px' },
         }}
       >
         {queue.length === 0 ? (
-          <Card 
+          <Card
             bordered={false}
-            style={{ 
-              textAlign: "center", 
-              padding: "40px 20px",
-              backgroundColor: "#fafafa",
-              borderRadius: "8px"
+            style={{
+              textAlign: 'center',
+              padding: '40px 20px',
+              backgroundColor: '#fafafa',
+              borderRadius: '8px',
             }}
           >
-            <IoCarSport style={{ fontSize: "48px", color: "#d9d9d9", marginBottom: "12px" }} />
-            <p style={{ color: "#8c8c8c", margin: 0, fontSize: "16px" }}>
+            <IoCarSport
+              style={{
+                fontSize: '48px',
+                color: '#d9d9d9',
+                marginBottom: '12px',
+              }}
+            />
+            <p style={{ color: '#8c8c8c', margin: 0, fontSize: '16px' }}>
               No taxis available in this route
             </p>
           </Card>
         ) : (
           <Card
             bordered={false}
-            style={{ 
-              backgroundColor: "#fafafa",
-              borderRadius: "8px",
-              padding: "16px"
+            style={{
+              backgroundColor: '#fafafa',
+              borderRadius: '8px',
+              padding: '16px',
             }}
           >
             <Alert
               message="Select taxis to assign to another route"
               type="info"
               showIcon
-              style={{ marginBottom: "16px", borderRadius: "6px" }}
+              style={{ marginBottom: '16px', borderRadius: '6px' }}
             />
-            
+
             <Form form={form} layout="vertical">
               <Form.Item
                 name="taxi_ids"
-                rules={[{ required: true, message: "Select at least 1 taxi" }]}
+                rules={[{ required: true, message: 'Select at least 1 taxi' }]}
                 style={{ marginBottom: 0 }}
               >
-                <Checkbox.Group style={{ width: "100%" }}>
-                  <Space direction="vertical" style={{ width: "100%" }}>
+                <Checkbox.Group style={{ width: '100%' }}>
+                  <Space direction="vertical" style={{ width: '100%' }}>
                     {queue.map((t, idx) => (
                       <Card
                         key={idx}
                         size="small"
                         style={{
-                          marginBottom: "8px",
-                          border: "1px solid #e8e8e8",
-                          borderRadius: "6px",
-                          backgroundColor: "white",
-                          transition: "all 0.2s"
+                          marginBottom: '8px',
+                          border: '1px solid #e8e8e8',
+                          borderRadius: '6px',
+                          backgroundColor: 'white',
+                          transition: 'all 0.2s',
                         }}
-                        bodyStyle={{ padding: "12px" }}
+                        bodyStyle={{ padding: '12px' }}
                       >
                         <Checkbox value={t.PlateNo}>
                           <Space align="center">
-                            <div style={{
-                              width: "24px",
-                              height: "24px",
-                              borderRadius: "4px",
-                              backgroundColor: "#1890ff",
-                              color: "white",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: "12px",
-                              fontWeight: 600
-                            }}>
+                            <div
+                              style={{
+                                width: '24px',
+                                height: '24px',
+                                borderRadius: '4px',
+                                backgroundColor: '#1890ff',
+                                color: 'white',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '12px',
+                                fontWeight: 600,
+                              }}
+                            >
                               {idx + 1}
                             </div>
-                            <FaTaxi style={{ color: "#1890ff", fontSize: "14px" }} />
-                            <span style={{ fontWeight: 500, color: "#262626" }}>
-                              Taxi <span style={{ fontFamily: "monospace", fontWeight: 600 }}>{t.PlateNo}</span>
+                            <FaTaxi
+                              style={{ color: '#1890ff', fontSize: '14px' }}
+                            />
+                            <span style={{ fontWeight: 500, color: '#262626' }}>
+                              Taxi{' '}
+                              <span
+                                style={{
+                                  fontFamily: 'monospace',
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {t.PlateNo}
+                              </span>
                             </span>
                           </Space>
                         </Checkbox>
@@ -260,12 +267,11 @@ const handleFinalAssign = async () => {
         )}
       </Modal>
 
-      {/* Second Modal - Only visual enhancements */}
       <Modal
         title={
           <Space align="center">
-            <FaRoute style={{ color: "#52c41a", fontSize: "18px" }} />
-            <span style={{ fontSize: "18px", fontWeight: 600 }}>
+            <FaRoute style={{ color: '#52c41a', fontSize: '18px' }} />
+            <span style={{ fontSize: '18px', fontWeight: 600 }}>
               Select Destination Route
             </span>
           </Space>
@@ -273,10 +279,10 @@ const handleFinalAssign = async () => {
         open={routeModalOpen}
         onCancel={() => setRouteModalOpen(false)}
         footer={[
-          <Button 
-            key="back" 
+          <Button
+            key="back"
             onClick={() => setRouteModalOpen(false)}
-            style={{ borderRadius: "6px" }}
+            style={{ borderRadius: '6px' }}
           >
             Back
           </Button>,
@@ -285,16 +291,16 @@ const handleFinalAssign = async () => {
             type="primary"
             disabled={!selectedRoute}
             onClick={handleFinalAssign}
-            style={{ borderRadius: "6px" }}
+            style={{ borderRadius: '6px' }}
           >
             Confirm Assignment
           </Button>,
         ]}
         width={500}
         styles={{
-          body: { paddingTop: "16px" },
-          header: { borderBottom: "1px solid #f0f0f0", padding: "16px 24px" },
-          footer: { borderTop: "1px solid #f0f0f0", padding: "16px 24px" }
+          body: { paddingTop: '16px' },
+          header: { borderBottom: '1px solid #f0f0f0', padding: '16px 24px' },
+          footer: { borderTop: '1px solid #f0f0f0', padding: '16px 24px' },
         }}
       >
         <Alert
@@ -306,59 +312,67 @@ const handleFinalAssign = async () => {
           }
           type="info"
           showIcon
-          style={{ marginBottom: "20px", borderRadius: "6px" }}
+          style={{ marginBottom: '20px', borderRadius: '6px' }}
         />
 
-        <div style={{ marginBottom: "24px" }}>
-          <div style={{ 
-            backgroundColor: "#f6ffed", 
-            border: "1px solid #b7eb8f",
-            borderRadius: "6px",
-            padding: "12px 16px",
-            marginBottom: "16px"
-          }}>
+        <div style={{ marginBottom: '24px' }}>
+          <div
+            style={{
+              backgroundColor: '#f6ffed',
+              border: '1px solid #b7eb8f',
+              borderRadius: '6px',
+              padding: '12px 16px',
+              marginBottom: '16px',
+            }}
+          >
             <Space>
-              <FaTaxi style={{ color: "#389e0d" }} />
+              <FaTaxi style={{ color: '#389e0d' }} />
               <span style={{ fontWeight: 500 }}>Assigning from:</span>
               <Tag color="blue">{routeName}</Tag>
             </Space>
           </div>
 
           <Select
-            style={{ width: "100%" }}
+            style={{ width: '100%' }}
             placeholder={
               <Space>
-                <FaRoute style={{ color: "#8c8c8c" }} />
+                <FaRoute style={{ color: '#8c8c8c' }} />
                 <span>Choose destination route</span>
               </Space>
             }
             onChange={(v) => setSelectedRoute(v)}
             size="large"
-            dropdownStyle={{ borderRadius: "6px" }}
+            dropdownStyle={{ borderRadius: '6px' }}
             optionLabelProp="label"
           >
             {routes.map((route) => (
-              <Select.Option 
-                key={route.id} 
+              <Select.Option
+                key={route.id}
                 value={route.id}
                 label={`${route.station_name} → ${route.EndTerminal}`}
               >
                 <Card
                   size="small"
-                  style={{ 
-                    border: "none",
-                    backgroundColor: "transparent",
-                    padding: "8px 0"
+                  style={{
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    padding: '8px 0',
                   }}
-                  bodyStyle={{ padding: "0" }}
+                  bodyStyle={{ padding: '0' }}
                 >
                   <Space>
-                    <FaRoute style={{ color: "#1890ff" }} />
+                    <FaRoute style={{ color: '#1890ff' }} />
                     <div>
-                      <div style={{ fontWeight: 500, color: "#262626" }}>
+                      <div style={{ fontWeight: 500, color: '#262626' }}>
                         {route.station_name} → {route.EndTerminal}
                       </div>
-                      <div style={{ fontSize: "12px", color: "#8c8c8c", marginTop: "2px" }}>
+                      <div
+                        style={{
+                          fontSize: '12px',
+                          color: '#8c8c8c',
+                          marginTop: '2px',
+                        }}
+                      >
                         Route ID: {route.id}
                       </div>
                     </div>
@@ -372,18 +386,18 @@ const handleFinalAssign = async () => {
         {selectedRoute && (
           <Alert
             message={
-              <Space direction="vertical" size={4} style={{ width: "100%" }}>
-                <div style={{ fontWeight: 500, color: "#389e0d" }}>
+              <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                <div style={{ fontWeight: 500, color: '#389e0d' }}>
                   Ready to assign taxis
                 </div>
-                <div style={{ fontSize: "13px", color: "#595959" }}>
+                <div style={{ fontSize: '13px', color: '#595959' }}>
                   Click "Confirm Assignment" to complete the transfer
                 </div>
               </Space>
             }
             type="success"
             showIcon
-            style={{ borderRadius: "6px" }}
+            style={{ borderRadius: '6px' }}
           />
         )}
       </Modal>

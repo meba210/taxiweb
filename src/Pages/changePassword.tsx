@@ -1,29 +1,25 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Form,
   Input,
   Button,
   Card,
-  Row,
-  Col,
   Typography,
   Alert,
   message,
-  Spin,
   Space,
-  Divider
+  Divider,
 } from 'antd';
 import {
   ArrowLeftOutlined,
   EyeOutlined,
   EyeInvisibleOutlined,
-  LockOutlined
+  LockOutlined,
 } from '@ant-design/icons';
 import axios from 'axios';
 
 const { Title, Text } = Typography;
-
 
 const ChangePasswordScreen = () => {
   const navigate = useNavigate();
@@ -32,9 +28,9 @@ const ChangePasswordScreen = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  const onFinish = async (values:any) => {
+  const onFinish = async (values: any) => {
     const { currentPassword, newPassword, confirmPassword } = values;
-    
+
     if (newPassword !== confirmPassword) {
       form.setFields([
         {
@@ -70,7 +66,9 @@ const ChangePasswordScreen = () => {
       if (response.data?.success) {
         localStorage.setItem('mustChangePassword', 'false');
         setSuccess(true);
-        message.success('Password updated successfully!', 2, () => navigate('/StationsAdminDashboard'));
+        message.success('Password updated successfully!', 2, () =>
+          navigate('/StationsAdminDashboard')
+        );
       }
     } catch (err: unknown) {
       let message = 'Failed to update password';
@@ -119,8 +117,8 @@ const ChangePasswordScreen = () => {
           className="shadow-xl border-0"
           styles={{
             body: {
-              padding: '32px'
-            }
+              padding: '32px',
+            },
           }}
         >
           <Space direction="vertical" size="large" className="w-full">
@@ -195,8 +193,10 @@ const ChangePasswordScreen = () => {
                   { required: true, message: 'Please enter new password' },
                   { min: 8, message: 'Password must be at least 8 characters' },
                   {
-                    pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-                    message: 'Must include uppercase, lowercase, number & special character',
+                    pattern:
+                      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+                    message:
+                      'Must include uppercase, lowercase, number & special character',
                   },
                 ]}
                 help="Minimum 8 characters with uppercase, lowercase, number and special character"
@@ -222,7 +222,9 @@ const ChangePasswordScreen = () => {
                       if (!value || getFieldValue('newPassword') === value) {
                         return Promise.resolve();
                       }
-                      return Promise.reject(new Error('Passwords do not match'));
+                      return Promise.reject(
+                        new Error('Passwords do not match')
+                      );
                     },
                   }),
                 ]}

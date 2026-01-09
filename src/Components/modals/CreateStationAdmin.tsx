@@ -1,112 +1,31 @@
-// import {  Button, Input, message, Modal, Select,  } from "antd";
-// import axios from "axios";
-// import { useEffect, useState } from "react";
-
-// type CreateStationAdminProps = {
-//    isModalOpen: boolean;
-//   handleCancel: () => void;
-//    onStationAdminCreated?: () => void;
-// };
-// type Station = {
-//   id:number,
-//   StationName: string;
-// };
-// const CreateStationAdmin:  React.FC <CreateStationAdminProps>= ({isModalOpen, handleCancel,onStationAdminCreated}) => {
-     
-//     const [FullName, setFullName] = useState("");
-//       const [PhoneNumber, setPhoneNumber] = useState("");
-//       const [Email, setEmail] = useState("");
-//       const [UserName, setUserName] = useState("");
-//     const [stations, setStations] = useState<Station[]>([]);
-//       const [loading, setLoading] = useState(false);
-//       const [selectedStation, setSelectedStation] = useState<number | undefined>();
-
-
-//        useEffect(() => {
-//     const fetchStations = async () => {
-//       try {
-//         const res = await axios.get("http://localhost:5000/stations");
-//         setStations(res.data);
-//       } catch (err) {
-//         console.error("Failed to fetch stations:", err);
-//       }
-//     };
-
-//     fetchStations();
-//   }, []);
-
-//         const handleCreate = async () => {
-//     if (!FullName || !Email || !PhoneNumber || !UserName || !selectedStation) {
-//       message.warning("Please fill in all fields");
-//       return;
-//     }
-
-//     try {
-//       setLoading(true);
-//       const res = await axios.post(
-//         "http://localhost:5000/stationadmins",
-//         { FullName, Email, PhoneNumber,UserName,selectedStation,role_id: 2},
-//         { withCredentials: true }
-//       );
-
-//      alert(res.data.message || "✅ Station created successfully!");
-//       handleCancel(); 
-//       onStationAdminCreated?.(); // refresh data
-//     } catch (err: any) {
-//       console.error(err);
-//        alert(err.response?.data?.message || "Failed to create station");
-//     } finally {
-//       setLoading(false);
-//     }
-//         }
-// return(
-
-// <Modal
-//  open={isModalOpen}
-//   onCancel={handleCancel}
-//   footer={null}
-// >
-//     <div>
-//         <Input placeholder="Insert Full name"
-//          onChange={(e) => setFullName(e.target.value)}
-//         />
-//          <Input placeholder="Insert email"
-//          onChange={(e) => setEmail(e.target.value)}
-//          />
-//         <Input placeholder="Insert Phonenumber"
-//         onChange={(e) => setPhoneNumber(e.target.value)}
-//         />
-//            <Input placeholder="Insert username"
-//            onChange={(e) => setUserName(e.target.value)}
-//            />
-//          <Select placeholder="select station"
-//            onChange={(value) => setSelectedStation(value)}
-//               value={selectedStation}
-//          options={stations.map((s) => ({ label: s.StationName,value: s.id, }))}
-//          />
-//           <Button
-//           type="primary"
-//           loading={loading}
-//           onClick={handleCreate}
-//           className="bg-blue-500 hover:bg-blue-600 w-full rounded-md"
-//         >
-//           Create Admin
-//         </Button>
-//     </div>
-// </Modal>
-// );
-
-// }; export default CreateStationAdmin
-
-
-import { Button, Input, message, Modal, Select, Form, Card, Space, Typography, Tag, Alert, Grid } from "antd";
-import axios from "axios";
-import { useEffect, useState } from "react";
-import { FaUserPlus, FaUser, FaPhoneAlt, FaEnvelope, FaBuilding, FaExclamationCircle, FaCheckCircle } from "react-icons/fa";
-import { MdAdminPanelSettings } from "react-icons/md";
+import {
+  Button,
+  Input,
+  message,
+  Modal,
+  Select,
+  Form,
+  Card,
+  Space,
+  Typography,
+  Tag,
+  Alert,
+  Row,
+  Col,
+} from 'antd';
+import axios from 'axios';
+import { useEffect, useState, useCallback } from 'react';
+import {
+  FaUser,
+  FaPhoneAlt,
+  FaEnvelope,
+  FaBuilding,
+  FaExclamationCircle,
+  FaCheckCircle,
+} from 'react-icons/fa';
+import { MdAdminPanelSettings } from 'react-icons/md';
 
 const { Title, Text } = Typography;
-const { useBreakpoint } = Grid;
 
 type CreateStationAdminProps = {
   isModalOpen: boolean;
@@ -115,35 +34,41 @@ type CreateStationAdminProps = {
 };
 
 type Station = {
- // id: number;
   StationName: string;
 };
 
-const CreateStationAdmin: React.FC<CreateStationAdminProps> = ({ 
-  isModalOpen, 
-  handleCancel, 
-  onStationAdminCreated 
+const CreateStationAdmin: React.FC<CreateStationAdminProps> = ({
+  isModalOpen,
+  handleCancel,
+  onStationAdminCreated,
 }) => {
   const [form] = Form.useForm();
-  const [FullName, setFullName] = useState("");
-  const [PhoneNumber, setPhoneNumber] = useState("");
-  const [Email, setEmail] = useState("");
-  const [UserName, setUserName] = useState("");
+  const [fullName, setFullName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [email, setEmail] = useState('');
+  const [userName, setUserName] = useState('');
   const [stations, setStations] = useState<Station[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedStation, setSelectedStation] = useState<string | undefined>();
   const [isFormValid, setIsFormValid] = useState(false);
-  
-  const screens = useBreakpoint();
+  const [checkingUsername, setCheckingUsername] = useState(false);
+  const [isUsernameAvailable, setIsUsernameAvailable] = useState<
+    boolean | null
+  >(null);
+  const [usernameCheckTimer, setUsernameCheckTimer] = useState<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+
+  const token = localStorage.getItem('token');
 
   useEffect(() => {
     const fetchStations = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/stations");
+        const res = await axios.get('http://localhost:5000/stations');
         setStations(res.data);
       } catch (err) {
-        console.error("Failed to fetch stations:", err);
-        message.error("Failed to load stations");
+        console.error('Failed to fetch stations:', err);
+        message.error('Failed to load stations');
       }
     };
 
@@ -152,100 +77,137 @@ const CreateStationAdmin: React.FC<CreateStationAdminProps> = ({
     }
   }, [isModalOpen]);
 
-  // Check form validity
+  const checkUsernameAvailability = useCallback(
+    async (username: string) => {
+      if (!username.trim() || username.trim().length < 3) {
+        setIsUsernameAvailable(null);
+        return;
+      }
+
+      if (!token) return;
+
+      setCheckingUsername(true);
+      try {
+        const res = await axios.get('http://localhost:5000/stationadmins', {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { username: username.trim() },
+        });
+
+        const stationAdmins = res.data || [];
+        const usernameExists = stationAdmins.some(
+          (admin: any) =>
+            admin.UserName &&
+            admin.UserName.toLowerCase() === username.trim().toLowerCase()
+        );
+
+        setIsUsernameAvailable(!usernameExists);
+      } catch (err: any) {
+        console.error('Failed to check username:', err);
+        setIsUsernameAvailable(null);
+      } finally {
+        setCheckingUsername(false);
+      }
+    },
+    [token]
+  );
+
+  const handleUsernameChange = (value: string) => {
+    setUserName(value);
+
+    if (usernameCheckTimer) {
+      clearTimeout(usernameCheckTimer);
+    }
+
+    const timer = setTimeout(() => {
+      if (value.trim().length >= 3) {
+        checkUsernameAvailability(value);
+      } else {
+        setIsUsernameAvailable(null);
+      }
+    }, 500);
+
+    setUsernameCheckTimer(timer);
+  };
+
   useEffect(() => {
-    const isValid = FullName && 
-                    Email && 
-                    PhoneNumber && 
-                    UserName && 
-                    selectedStation &&
-                    FullName.trim().length >= 2 &&
-                    /^[A-Za-z\s'-]+$/.test(FullName.trim()) &&
-                    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(Email) &&
-                    (/^09\d{8}$/.test(PhoneNumber.replace(/\s/g, '')) || /^\+2519\d{9}$/.test(PhoneNumber.replace(/\s/g, '')));
+    const isValid =
+      fullName &&
+      email &&
+      phoneNumber &&
+      userName &&
+      selectedStation &&
+      fullName.trim().length >= 2 &&
+      /^[A-Za-z\s'-]+$/.test(fullName.trim()) &&
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) &&
+      (/^09\d{8}$/.test(phoneNumber.replace(/\s/g, '')) ||
+        /^\+2519\d{9}$/.test(phoneNumber.replace(/\s/g, ''))) &&
+      userName.trim().length >= 3 &&
+      isUsernameAvailable === true;
+
     setIsFormValid(!!isValid);
-  }, [FullName, Email, PhoneNumber, UserName, selectedStation]);
+  }, [
+    fullName,
+    email,
+    phoneNumber,
+    userName,
+    selectedStation,
+    isUsernameAvailable,
+  ]);
 
   const handleCreate = async () => {
-    if (!FullName.trim()) {
-      message.warning("Please enter the admin's full name");
+    if (!isFormValid) {
+      message.warning('Please fill all required fields correctly');
       return;
     }
 
-    if (!/^[A-Za-z\s'-]+$/.test(FullName.trim())) {
-      message.warning("Name can only contain letters, spaces, apostrophes, and hyphens");
-      return;
-    }
-
-    if (FullName.trim().length < 2) {
-      message.warning("Name should be at least 2 characters long");
-      return;
-    }
-
-    if (!Email) {
-      message.warning("Please enter a valid email address");
-      return;
-    }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(Email)) {
-      message.warning("Please enter a valid email address format");
-      return;
-    }
-
-    if (!PhoneNumber) {
-      message.warning("Please enter a phone number");
-      return;
-    }
-
-    if (!(/^09\d{8}$/.test(PhoneNumber.replace(/\s/g, '')) || /^\+2519\d{9}$/.test(PhoneNumber.replace(/\s/g, '')))) {
-      message.warning("Please enter a valid Ethiopian phone number (09XXXXXXXXX or +2519XXXXXXXXX)");
-      return;
-    }
-
-    if (!UserName) {
-      message.warning("Please enter a username");
-      return;
-    }
-
-    if (!selectedStation) {
-      message.warning("Please select a station");
+    if (isUsernameAvailable === false) {
+      message.warning(
+        'This username is already taken. Please choose another one.'
+      );
       return;
     }
 
     try {
       setLoading(true);
       const res = await axios.post(
-        "http://localhost:5000/stationadmins",
-        { 
-          FullName: FullName.trim(),
-          Email: Email.trim(),
-          PhoneNumber: PhoneNumber.trim(),
-          UserName: UserName.trim(),
+        'http://localhost:5000/stationadmins',
+        {
+          FullName: fullName.trim(),
+          Email: email.trim().toLowerCase(),
+          PhoneNumber: phoneNumber.replace(/\s/g, ''),
+          UserName: userName.trim(),
           selectedStation,
-          role_id: 2 
+          role_id: 2,
         },
         { withCredentials: true }
       );
 
       message.success({
-        content: res.data.message || "✅ Station Admin created successfully!",
+        content: res.data.message || '✅ Station Admin created successfully!',
         duration: 3,
         icon: <FaCheckCircle style={{ color: '#52c41a' }} />,
       });
 
-      setFullName("");
-      setEmail("");
-      setPhoneNumber("");
-      setUserName("");
+      setFullName('');
+      setEmail('');
+      setPhoneNumber('');
+      setUserName('');
       setSelectedStation(undefined);
+      setIsUsernameAvailable(null);
       form.resetFields();
-      
+
       handleCancel();
       onStationAdminCreated?.();
     } catch (err: any) {
       console.error(err);
+      const errorMessage =
+        err.response?.data?.message || 'Failed to create station admin';
       message.error({
-        content: err.response?.data?.message || "Failed to create station admin",
+        content:
+          errorMessage.includes('Duplicate') ||
+          errorMessage.includes('username')
+            ? 'Username or email already exists'
+            : errorMessage,
         duration: 4,
       });
     } finally {
@@ -255,359 +217,554 @@ const CreateStationAdmin: React.FC<CreateStationAdminProps> = ({
 
   useEffect(() => {
     if (!isModalOpen) {
-      setFullName("");
-      setEmail("");
-      setPhoneNumber("");
-      setUserName("");
+      setFullName('');
+      setEmail('');
+      setPhoneNumber('');
+      setUserName('');
       setSelectedStation(undefined);
+      setIsUsernameAvailable(null);
       form.resetFields();
+
+      if (usernameCheckTimer) {
+        clearTimeout(usernameCheckTimer);
+        setUsernameCheckTimer(null);
+      }
     }
-  }, [isModalOpen]);
+  }, [isModalOpen, form]);
+
+  useEffect(() => {
+    return () => {
+      if (usernameCheckTimer) {
+        clearTimeout(usernameCheckTimer);
+      }
+    };
+  }, []);
 
   const formatPhoneNumber = (value: string) => {
     const cleaned = value.replace(/[^\d+]/g, '');
-    
+
     if (cleaned.startsWith('09') && cleaned.length <= 10) {
       return cleaned;
     } else if (cleaned.startsWith('+2519') && cleaned.length <= 13) {
       return cleaned;
     } else if (cleaned.startsWith('2519') && cleaned.length <= 12) {
       return `+${cleaned}`;
-    } else if (cleaned.startsWith('9') && !cleaned.startsWith('09') && cleaned.length <= 9) {
+    } else if (cleaned.startsWith('9') && cleaned.length <= 9) {
       return `0${cleaned}`;
     }
-    
+
     return cleaned;
   };
 
-  const selectedStationName = selectedStation 
-    ? stations.find(s => s.StationName === selectedStation)?.StationName 
-    : null;
+  const getUsernameValidationStatus = () => {
+    if (!userName) return '';
+    if (userName.trim().length < 3) return 'error';
+    if (checkingUsername) return 'validating';
+    if (isUsernameAvailable === false) return 'error';
+    if (isUsernameAvailable === true) return 'success';
+    return '';
+  };
+
+  const getUsernameHelpText = () => {
+    if (!userName) return 'Choose a username';
+    if (userName.trim().length < 3) return 'Minimum 3 characters';
+    if (checkingUsername) return 'Checking availability...';
+    if (isUsernameAvailable === false) return 'Username already taken';
+    if (isUsernameAvailable === true) return 'Username is available';
+    return 'Username must be at least 3 characters';
+  };
+
+  const stationOptions = stations.map((station) => ({
+    label: (
+      <Space>
+        <FaBuilding style={{ color: '#722ed1' }} />
+        <Text style={{ fontSize: '13px' }}>{station.StationName}</Text>
+      </Space>
+    ),
+    value: station.StationName,
+  }));
 
   return (
     <Modal
       open={isModalOpen}
       onCancel={handleCancel}
       footer={null}
-      width={screens.lg ? 600 : screens.md ? 500 : 400}
+      width={800}
       centered
+      style={{ top: 20 }}
       title={
-        <Space align="center" size={screens.xs ? "small" : "middle"}>
-          <div style={{
-            backgroundColor: '#722ed1',
-            borderRadius: '8px',
-            padding: screens.xs ? '6px' : '8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <MdAdminPanelSettings size={screens.xs ? 16 : 20} color="#fff" />
+        <Space align="center">
+          <div
+            style={{
+              backgroundColor: '#722ed1',
+              borderRadius: '8px',
+              padding: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <MdAdminPanelSettings size={18} color="#fff" />
           </div>
-          <Title level={screens.xs ? 5 : 4} style={{ margin: 0 }}>Create Station Admin</Title>
+          <Title level={4} style={{ margin: 0 }}>
+            Create Station Admin
+          </Title>
         </Space>
       }
       styles={{
-        body: { padding: screens.xs ? '16px 0' : '24px 0' },
-        header: { borderBottom: '1px solid #f0f0f0', padding: screens.xs ? '12px 16px' : '16px 24px' }
+        body: { padding: '16px 0' },
+        header: { borderBottom: '1px solid #f0f0f0', padding: '16px 24px' },
+        content: { maxHeight: 'calc(100vh - 100px)', overflowY: 'auto' },
       }}
     >
-      <Form
-        form={form}
-        layout="vertical"
-        style={{ maxWidth: '100%' }}
-      >
+      <Form form={form} layout="vertical" style={{ maxWidth: '100%' }}>
         <Alert
-          message="Create a new station administrator account"
-          description={screens.xs ? undefined : "Station admins manage specific station operations and users"}
+          message="Station Administrator Information"
+          description="Fill all required fields to create a new station admin account"
           type="info"
           showIcon
           icon={<FaExclamationCircle />}
-          style={{ marginBottom: screens.xs ? 16 : 24, borderRadius: '8px' }}
+          style={{
+            marginBottom: 20,
+            borderRadius: '6px',
+            fontSize: '13px',
+          }}
         />
 
-        {/* Personal Information Card */}
-        <Card
-          title={
-            <Space>
-              <FaUser style={{ color: '#1890ff' }} />
-              <Text strong>{screens.xs ? "Personal Info" : "Personal Information"}</Text>
-            </Space>
-          }
-          size="small"
-          style={{ marginBottom: screens.xs ? 16 : 24, borderColor: '#e8e8e8' }}
-          bodyStyle={{ padding: screens.xs ? '12px' : '16px' }}
-        >
-          <Form.Item
-            label={
-              <Space size={4}>
-                <FaUser size={12} />
-                <Text strong>Full Name</Text>
-              </Space>
-            }
-            required
-            validateStatus={FullName ? (
-              /^[A-Za-z\s]+$/.test(FullName.trim()) && FullName.trim().length >= 2
-                ? 'success' 
-                : 'error'
-            ) : ''}
-            help={FullName ? (!/^[A-Za-z\s]+$/.test(FullName.trim()) && FullName.trim().length >= 2 ? 'Invalid full name' : "") : "Required field"}
-          >
-            <Input
-              placeholder="Abebe"
-              value={FullName}
-              onChange={(e) => setFullName(e.target.value)}
-              size={screens.xs ? "middle" : "large"}
-              prefix={<FaUser style={{ color: '#bfbfbf' }} />}
-              style={{ borderRadius: '6px' }}
-              allowClear
-            />
-          </Form.Item>
-
-          <Form.Item
-            label={
-              <Space size={4}>
-                <FaEnvelope size={12} />
-                <Text strong>Email Address</Text>
-              </Space>
-            }
-            required
-            validateStatus={
-              Email 
-                ? (
-                    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(Email)
-                      ? 'success' 
-                      : 'error'
-                  ) 
-                : ''
-            }
-            help={
-              Email 
-                ? (
-                    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(Email)
-                      ? 'Invalid email format'
-                      : ""
-                  ) 
-                : "Required field"
-            }
-          >
-            <Input
-              placeholder="abe@example.com"
-              value={Email}
-              onChange={(e) => setEmail(e.target.value)}
-              size={screens.xs ? "middle" : "large"}
-              prefix={<FaEnvelope style={{ color: '#bfbfbf' }} />}
-              style={{ borderRadius: '6px' }}
-              allowClear
-            />
-          </Form.Item>
-
-          <Form.Item
-            label={
-              <Space size={4}>
-                <FaPhoneAlt size={12} />
-                <Text strong>Phone Number</Text>
-              </Space>
-            }
-            required
-            validateStatus={
-              PhoneNumber 
-                ? (
-                    (/^09\d{8}$/.test(PhoneNumber.replace(/\s/g, '')))
-                      ? 'success' 
-                      : 'error'
-                  ) 
-                : ''
-            }
-            help={
-              PhoneNumber 
-                ? (
-                    !(/^09\d{8}$/.test(PhoneNumber.replace(/\s/g, '')))
-                      ? 'Use 09XXXXXXXXX'
-                      : ""
-                  ) 
-                : "Required field"
-            }
-          >
-            <Input
-              placeholder="09XXXXXXXXX"
-              value={PhoneNumber}
-              onChange={(e) => {
-                const formatted = formatPhoneNumber(e.target.value);
-                setPhoneNumber(formatted);
-              }}
-              size={screens.xs ? "middle" : "large"}
-              prefix={
-                <Space size={4}>
-                  <FaPhoneAlt style={{ color: '#bfbfbf' }} />
+        <Row gutter={[20, 16]}>
+          <Col xs={24} md={12}>
+            <Card
+              title={
+                <Space>
+                  <FaUser style={{ color: '#722ed1', fontSize: '14px' }} />
+                  <Text strong style={{ fontSize: '14px' }}>
+                    Personal Details
+                  </Text>
                 </Space>
               }
-              style={{ borderRadius: '6px' }}
-              allowClear
-            />
-          </Form.Item>
-        </Card>
-
-        {/* Account Information Card */}
-        <Card
-          title={
-            <Space>
-              <FaUserPlus style={{ color: '#1890ff' }} />
-              <Text strong>{screens.xs ? "Account Info" : "Account Information"}</Text>
-            </Space>
-          }
-          size="small"
-          style={{ marginBottom: screens.xs ? 16 : 24, borderColor: '#e8e8e8' }}
-          bodyStyle={{ padding: screens.xs ? '12px' : '16px' }}
-        >
-          <Form.Item
-            label={
-              <Space size={4}>
-                <FaUser size={12} />
-                <Text strong>Username</Text>
-              </Space>
-            }
-            required
-            validateStatus={UserName ? 'success' : ''}
-            help={!UserName ? "Required field" : ""}
-          >
-            <Input
-              placeholder="johndoe123"
-              value={UserName}
-              onChange={(e) => setUserName(e.target.value)}
-              size={screens.xs ? "middle" : "large"}
-              prefix={<FaUser style={{ color: '#bfbfbf' }} />}
-              style={{ borderRadius: '6px' }}
-              allowClear
-              maxLength={30}
-            />
-          </Form.Item>
-        </Card>
-
-        {/* Station Assignment Card */}
-        <Card
-          title={
-            <Space>
-              <FaBuilding style={{ color: '#1890ff' }} />
-              <Text strong>{screens.xs ? "Station" : "Station Assignment"}</Text>
-              {selectedStation && (
-                <Tag color="green" style={{ marginLeft: screens.xs ? '4px' : '8px', fontSize: screens.xs ? '10px' : '12px' }}>Selected</Tag>
-              )}
-            </Space>
-          }
-          size="small"
-          style={{ marginBottom: screens.xs ? 24 : 32, borderColor: '#e8e8e8' }}
-          bodyStyle={{ padding: screens.xs ? '12px' : '16px' }}
-        >
-          <Form.Item
-            label={
-              <Space size={4} wrap>
-                <FaBuilding size={12} />
-                <Text strong>{screens.xs ? "Station" : "Assigned Station"}</Text>
-                <Tag color="red" style={{ fontSize: screens.xs ? '9px' : '10px' }}>Required</Tag>
-              </Space>
-            }
-            required
-            validateStatus={selectedStation ? 'success' : ''}
-            help={!selectedStation ? "Select a station for the admin" : ""}
-          >
-            <Select
-              placeholder="Select a station"
-              value={selectedStation}
-              onChange={(value) => setSelectedStation(value)}
-              size={screens.xs ? "middle" : "large"}
-              style={{ width: '100%', borderRadius: '6px' }}
-              dropdownStyle={{ borderRadius: '6px' }}
-              suffixIcon={<FaBuilding style={{ color: '#bfbfbf' }} />}
-              showSearch
-              options={stations.map((s) => ({
-                label: (
-                  <Space>
-                    <FaBuilding style={{ color: '#722ed1' }} />
-                    <Text>{screens.xs ? (s.StationName.length > 15 ? s.StationName.substring(0, 15) + '...' : s.StationName) : s.StationName}</Text>
-                  
+              size="small"
+              style={{
+                borderColor: '#e8e8e8',
+                height: '100%',
+              }}
+              bodyStyle={{ padding: '16px' }}
+              headStyle={{
+                padding: '0 16px',
+                minHeight: 'auto',
+                lineHeight: '40px',
+              }}
+            >
+              <Form.Item
+                label={
+                  <Space size={4}>
+                    <FaUser
+                      size={11}
+                      style={{ color: '#722ed1', fontSize: '14px' }}
+                    />
+                    <Text strong style={{ fontSize: '13px' }}>
+                      Full Name
+                    </Text>
+                    <Tag
+                      color="red"
+                      style={{ fontSize: '9px', padding: '0 4px' }}
+                    >
+                      Required
+                    </Tag>
                   </Space>
-                ),
-                value: s.StationName,
-              }))}
-              notFoundContent={
-                <div style={{ padding: '16px', textAlign: 'center' }}>
-                  <FaBuilding style={{ fontSize: '24px', color: '#d9d9d9', marginBottom: '8px' }} />
-                  <Text type="secondary">No stations found</Text>
-                </div>
+                }
+                required={false}
+                validateStatus={
+                  fullName
+                    ? /^[A-Za-z\s'-]+$/.test(fullName.trim()) &&
+                      fullName.trim().length >= 2
+                      ? 'success'
+                      : 'error'
+                    : ''
+                }
+                help={
+                  <div style={{ fontSize: '12px' }}>
+                    {fullName
+                      ? !/^[A-Za-z\s'-]+$/.test(fullName.trim())
+                        ? 'Only letters, spaces, apostrophes, and hyphens'
+                        : fullName.trim().length < 2
+                        ? 'Minimum 2 characters'
+                        : ''
+                      : "Admin's full name"}
+                  </div>
+                }
+              >
+                <Input
+                  placeholder="e.g., Abebe Kebede"
+                  value={fullName}
+                  onChange={(e) => {
+                    const filtered = e.target.value.replace(
+                      /[^A-Za-z\s'-]/g,
+                      ''
+                    );
+                    setFullName(filtered);
+                  }}
+                  onBlur={() => {
+                    if (fullName.trim()) {
+                      const capitalized = fullName
+                        .trim()
+                        .split(' ')
+                        .map(
+                          (word) =>
+                            word.charAt(0).toUpperCase() +
+                            word.slice(1).toLowerCase()
+                        )
+                        .join(' ');
+                      setFullName(capitalized);
+                    }
+                  }}
+                  size="middle"
+                  prefix={
+                    <FaUser style={{ color: '#bfbfbf', fontSize: '12px' }} />
+                  }
+                  style={{ borderRadius: '5px', fontSize: '13px' }}
+                  allowClear
+                  maxLength={50}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={
+                  <Space size={4}>
+                    <FaEnvelope
+                      size={11}
+                      style={{ color: '#722ed1', fontSize: '14px' }}
+                    />
+                    <Text strong style={{ fontSize: '13px' }}>
+                      Email Address
+                    </Text>
+                    <Tag
+                      color="red"
+                      style={{ fontSize: '9px', padding: '0 4px' }}
+                    >
+                      Required
+                    </Tag>
+                  </Space>
+                }
+                required={false}
+                validateStatus={
+                  email
+                    ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+                      ? 'success'
+                      : 'error'
+                    : ''
+                }
+                help={
+                  <div style={{ fontSize: '12px' }}>
+                    {email
+                      ? !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+                        ? 'Invalid email format'
+                        : ''
+                      : 'Valid email address'}
+                  </div>
+                }
+              >
+                <Input
+                  placeholder="abebe.kebede@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value.toLowerCase())}
+                  size="middle"
+                  prefix={
+                    <FaEnvelope
+                      style={{ color: '#bfbfbf', fontSize: '12px' }}
+                    />
+                  }
+                  style={{ borderRadius: '5px', fontSize: '13px' }}
+                  allowClear
+                />
+              </Form.Item>
+
+              <Form.Item
+                label={
+                  <Space size={4}>
+                    <FaPhoneAlt
+                      size={11}
+                      style={{ color: '#722ed1', fontSize: '14px' }}
+                    />
+                    <Text strong style={{ fontSize: '13px' }}>
+                      Phone Number
+                    </Text>
+                    <Tag
+                      color="red"
+                      style={{ fontSize: '9px', padding: '0 4px' }}
+                    >
+                      Required
+                    </Tag>
+                  </Space>
+                }
+                required={false}
+                validateStatus={
+                  phoneNumber
+                    ? /^09\d{8}$/.test(phoneNumber.replace(/\s/g, '')) ||
+                      /^\+2519\d{9}$/.test(phoneNumber.replace(/\s/g, ''))
+                      ? 'success'
+                      : 'error'
+                    : ''
+                }
+                help={
+                  <div style={{ fontSize: '12px' }}>
+                    {phoneNumber
+                      ? !/^09\d{8}$/.test(phoneNumber.replace(/\s/g, '')) &&
+                        !/^\+2519\d{9}$/.test(phoneNumber.replace(/\s/g, ''))
+                        ? 'Format: 09XXXXXXXX or +2519XXXXXXXXX'
+                        : ''
+                      : 'Ethiopian phone number'}
+                  </div>
+                }
+              >
+                <Input
+                  placeholder="0912345678 or +251912345678"
+                  value={phoneNumber}
+                  onChange={(e) => {
+                    const formatted = formatPhoneNumber(e.target.value);
+                    setPhoneNumber(formatted);
+                  }}
+                  size="middle"
+                  prefix={
+                    <FaPhoneAlt
+                      style={{ color: '#bfbfbf', fontSize: '12px' }}
+                    />
+                  }
+                  style={{ borderRadius: '5px', fontSize: '13px' }}
+                  allowClear
+                />
+              </Form.Item>
+            </Card>
+          </Col>
+
+          <Col xs={24} md={12}>
+            <Card
+              title={
+                <Space>
+                  <MdAdminPanelSettings
+                    style={{ color: '#722ed1', fontSize: '14px' }}
+                  />
+                  <Text strong style={{ fontSize: '14px' }}>
+                    Account & Station
+                  </Text>
+                </Space>
               }
-            />
-          </Form.Item>
-        </Card>
+              size="small"
+              style={{
+                borderColor: '#e8e8e8',
+                height: '100%',
+                marginBottom: 0,
+              }}
+              bodyStyle={{ padding: '16px' }}
+              headStyle={{
+                padding: '0 16px',
+                minHeight: 'auto',
+                lineHeight: '40px',
+              }}
+            >
+              <Form.Item
+                label={
+                  <Space size={4}>
+                    <FaUser
+                      size={11}
+                      style={{ color: '#722ed1', fontSize: '14px' }}
+                    />
+                    <Text strong style={{ fontSize: '13px' }}>
+                      Username
+                    </Text>
+                    <Tag
+                      color="red"
+                      style={{ fontSize: '9px', padding: '0 4px' }}
+                    >
+                      Required
+                    </Tag>
+                  </Space>
+                }
+                required={false}
+                validateStatus={getUsernameValidationStatus()}
+                help={
+                  <div style={{ fontSize: '12px' }}>
+                    {getUsernameHelpText()}
+                    {isUsernameAvailable === true && (
+                      <Tag
+                        color="green"
+                        style={{
+                          marginLeft: 8,
+                          fontSize: '10px',
+                          padding: '0 4px',
+                        }}
+                      >
+                        Available
+                      </Tag>
+                    )}
+                    {isUsernameAvailable === false && (
+                      <Tag
+                        color="red"
+                        style={{
+                          marginLeft: 8,
+                          fontSize: '10px',
+                          padding: '0 4px',
+                        }}
+                      >
+                        Taken
+                      </Tag>
+                    )}
+                  </div>
+                }
+              >
+                <Input
+                  placeholder="abebe123"
+                  value={userName}
+                  onChange={(e) => handleUsernameChange(e.target.value)}
+                  size="middle"
+                  prefix={
+                    <FaUser style={{ color: '#bfbfbf', fontSize: '12px' }} />
+                  }
+                  style={{ borderRadius: '5px', fontSize: '13px' }}
+                  allowClear
+                  maxLength={30}
+                  disabled={checkingUsername}
+                />
+              </Form.Item>
 
-        {/* Admin Summary */}
-        {isFormValid && selectedStationName && (
-          <Card
-            size="small"
-            style={{ 
-              marginBottom: screens.xs ? 16 : 24, 
-              borderColor: '#b7eb8f',
-              backgroundColor: '#f6ffed'
-            }}
-            bodyStyle={{ padding: screens.xs ? '8px 12px' : '12px 16px' }}
-          >
-            <Space direction="vertical" size={4} style={{ width: '100%' }}>
-              <Text strong style={{ color: '#389e0d', fontSize: screens.xs ? '13px' : '14px' }}>Admin Summary</Text>
-              <Space wrap>
-                <Text type="secondary">Name:</Text>
-                <Text strong style={{ fontSize: screens.xs ? '13px' : '14px' }}>{FullName.trim()}</Text>
-              </Space>
-              <Space wrap>
-                <Text type="secondary">Username:</Text>
-                <Text strong style={{ fontSize: screens.xs ? '13px' : '14px' }}>{UserName.trim()}</Text>
-              </Space>
-              <Space wrap>
-                <Text type="secondary">Station:</Text>
-                <Tag color="purple" style={{ fontSize: screens.xs ? '10px' : '12px' }}>
-                  {screens.xs && selectedStationName.length > 15 
-                    ? selectedStationName.substring(0, 15) + '...' 
-                    : selectedStationName}
-                </Tag>
-              </Space>
-              <Space wrap>
-                <Text type="secondary">Role:</Text>
-                <Tag color="volcano" style={{ fontSize: screens.xs ? '10px' : '12px' }}>Station Admin</Tag>
-              </Space>
-            </Space>
-          </Card>
-        )}
+              <Form.Item
+                label={
+                  <Space size={4}>
+                    <FaBuilding
+                      size={11}
+                      style={{ color: '#722ed1', fontSize: '14px' }}
+                    />
+                    <Text strong style={{ fontSize: '13px' }}>
+                      Assigned Station
+                    </Text>
+                    <Tag
+                      color="red"
+                      style={{ fontSize: '9px', padding: '0 4px' }}
+                    >
+                      Required
+                    </Tag>
+                  </Space>
+                }
+                required={false}
+                validateStatus={selectedStation ? 'success' : ''}
+                help={
+                  <div style={{ fontSize: '12px' }}>
+                    {!selectedStation ? 'Select a station for the admin' : ''}
+                  </div>
+                }
+              >
+                <Select
+                  placeholder="Select a station for assignment"
+                  value={selectedStation}
+                  onChange={setSelectedStation}
+                  size="middle"
+                  style={{
+                    width: '100%',
+                    borderRadius: '5px',
+                    fontSize: '13px',
+                  }}
+                  dropdownStyle={{
+                    borderRadius: '5px',
+                    maxHeight: 250,
+                    overflow: 'auto',
+                  }}
+                  allowClear
+                  suffixIcon={
+                    <FaBuilding
+                      style={{ color: '#bfbfbf', fontSize: '12px' }}
+                    />
+                  }
+                  options={stationOptions}
+                  loading={stations.length === 0}
+                  listHeight={200}
+                  showSearch
+                  filterOption={(input, option) =>
+                    (option?.label?.props?.children?.[1]?.props?.children || '')
+                      .toLowerCase()
+                      .includes(input.toLowerCase())
+                  }
+                />
+              </Form.Item>
 
+              {isFormValid && (
+                <Alert
+                  message="Ready to Create"
+                  description={
+                    <div style={{ fontSize: '12px' }}>
+                      <div>
+                        <strong>Name:</strong> {fullName}
+                      </div>
+                      <div>
+                        <strong>Username:</strong>{' '}
+                        <Tag color="green" style={{ fontSize: '10px' }}>
+                          {userName}
+                        </Tag>
+                      </div>
+                      <div>
+                        <strong>Station:</strong> {selectedStation}
+                      </div>
+                    </div>
+                  }
+                  type="success"
+                  showIcon
+                  style={{
+                    marginTop: 16,
+                    borderRadius: '5px',
+                    fontSize: '12px',
+                  }}
+                />
+              )}
 
-        {/* Action Buttons */}
-        <Space style={{ width: '100%', justifyContent: 'space-between' }} wrap={screens.xs}>
-          <Button
-            onClick={handleCancel}
-            size={screens.xs ? "middle" : "large"}
-            style={{ 
-              borderRadius: '6px', 
-              padding: screens.xs ? '0 16px' : '0 24px',
-              marginBottom: screens.xs ? '8px' : 0
-            }}
-          >
-            Cancel
-          </Button>
-          
-          <Button
-            type="primary"
-            loading={loading}
-            onClick={handleCreate}
-            size={screens.xs ? "middle" : "large"}
-            disabled={!isFormValid}
-            style={{ 
-              borderRadius: '6px', 
-              padding: screens.xs ? '0 24px' : '0 32px',
-              background: isFormValid ? '#722ed1' : '#d9d9d9',
-              borderColor: isFormValid ? '#722ed1' : '#d9d9d9'
-            }}
-            icon={!screens.xs && <MdAdminPanelSettings />}
-          >
-            {loading ? 'Creating...' : (screens.xs ? 'Create Admin' : 'Create Station Admin')}
-          </Button>
-        </Space>
+              <div
+                style={{
+                  marginTop: 20,
+                  paddingTop: 16,
+                  borderTop: '1px solid #f0f0f0',
+                }}
+              >
+                <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
+                  <Button
+                    onClick={handleCancel}
+                    size="middle"
+                    style={{
+                      borderRadius: '5px',
+                      padding: '0 20px',
+                      fontSize: '13px',
+                    }}
+                  >
+                    Cancel
+                  </Button>
+
+                  <Button
+                    type="primary"
+                    loading={loading}
+                    onClick={handleCreate}
+                    size="middle"
+                    disabled={!isFormValid}
+                    style={{
+                      borderRadius: '5px',
+                      padding: '0 24px',
+                      fontSize: '13px',
+                      background: isFormValid ? '#722ed1' : '#d9d9d9',
+                      borderColor: isFormValid ? '#722ed1' : '#d9d9d9',
+                    }}
+                    icon={<MdAdminPanelSettings style={{ fontSize: '12px' }} />}
+                  >
+                    {loading ? 'Creating...' : 'Create'}
+                  </Button>
+                </Space>
+
+                <div style={{ marginTop: 12 }}>
+                  <Text type="secondary" style={{ fontSize: '11px' }}>
+                    <FaExclamationCircle
+                      style={{ marginRight: '4px', fontSize: '10px' }}
+                    />
+                    All fields are required. Username must be unique.
+                  </Text>
+                </div>
+              </div>
+            </Card>
+          </Col>
+        </Row>
       </Form>
     </Modal>
   );

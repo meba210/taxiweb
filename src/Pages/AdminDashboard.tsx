@@ -13,6 +13,7 @@ import {
   Spin,
   Progress,
   Tag,
+  message,
 } from 'antd';
 import {
   CarOutlined,
@@ -42,6 +43,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { GrUserAdmin } from 'react-icons/gr';
+import dayjs, { Dayjs } from 'dayjs';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -63,6 +65,12 @@ type DashboardStats = {
   activeTripsChange?: number;
   availableTaxisEachStation?: any[];
   passengerWaitingTrend?: any[];
+  filteredData?: {
+    totalPassengers?: number;
+    availableTaxis?: number;
+    passengerWaitingTrend?: any[];
+    availableTaxisEachStation?: any[];
+  };
 };
 
 type Station = {
@@ -87,23 +95,18 @@ const AdminDashboard = () => {
   const [selectedStation, setSelectedStation] = useState('all');
   const [loading, setLoading] = useState(true);
   const [loadingStats, setLoadingStats] = useState(true);
+  const [dateRange, setDateRange] = useState<
+    [Dayjs | null, Dayjs | null] | null
+  >(null);
   const screens = useBreakpoint();
 
-  // State for fetched data
   const [dashboardStats, setDashboardStats] = useState<DashboardStats>({});
   const [stations, setStations] = useState<Station[]>([]);
+  const [filteredStats, setFilteredStats] = useState<DashboardStats>({});
+  const [filteredPassengerTrend, setFilteredPassengerTrend] = useState<any[]>(
+    []
+  );
 
-  // Chart data states
-  const [passengerTrend, setPassengerTrend] = useState<ChartData[]>([]);
-  const [stationPerformance, setStationPerformance] = useState<any[]>([]);
-  const [stationPerformance2, setStationPerformance2] = useState<any[]>([]);
-
-  const [passengerTaxiDistribution, setPassengerTaxiDistribution] = useState<
-    ChartData[]
-  >([]);
-  const [taxisByStatus, setTaxisByStatus] = useState<ChartData[]>([]);
-
-  // Colors for charts
   const CHART_COLORS = {
     primary: '#1890ff',
     secondary: '#52c41a',
@@ -118,206 +121,300 @@ const AdminDashboard = () => {
     try {
       const response = await axios.get('http://localhost:5000/stations');
       setStations(response.data);
-
-      // Generate chart data from stations
-      generateChartData(response.data);
     } catch (error) {
       console.error('Error fetching stations:', error);
-    } finally {
-      setLoading(false);
-      setLoadingStats(false);
     }
   };
 
-  const fetchpassengers = async () => {
+  const fetchAllData = async () => {
+    setLoadingStats(true);
     try {
-      const response = await axios.get('http://localhost:5000/passengerqueue');
-      setDashboardStats((prev) => ({
-        ...prev,
-        totalPassengers: response.data.total,
-      }));
+      const passengersRes = await axios.get(
+        'http://localhost:5000/passengerqueue'
+      );
 
-      // generateChartData(response.data);
-    } catch (error) {
-      console.error('Error fetching stations:', error);
-    } finally {
-      setLoading(false);
-      setLoadingStats(false);
-    }
-  };
+      const taxisRes = await axios.get('http://localhost:5000/taxis/total');
 
-  useEffect(() => {
-    fetchpassengers();
-  }, []);
-
-  const fetchtaxis = async () => {
-    try {
-      const response = await axios.get('http://localhost:5000/taxis/total');
-      setDashboardStats((prev) => ({
-        ...prev,
-        totalTaxis: response.data.count,
-      }));
-
-      // generateChartData(response.data);
-    } catch (error) {
-      console.error('Error fetching stations:', error);
-    } finally {
-      setLoading(false);
-      setLoadingStats(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchtaxis();
-  }, []);
-
-  const fetchavailabletaxis = async () => {
-    try {
-      const response = await axios.get(
+      const availableTaxisRes = await axios.get(
         'http://localhost:5000/taxi-queue/total'
       );
-      setDashboardStats((prev) => ({
-        ...prev,
-        availableTaxis: response.data.total,
-      }));
 
-      // generateChartData(response.data);
-    } catch (error) {
-      console.error('Error fetching stations:', error);
-    } finally {
-      setLoading(false);
-      setLoadingStats(false);
-    }
-  };
+      const stationsRes = await axios.get(
+        'http://localhost:5000/stations/total'
+      );
 
-  useEffect(() => {
-    fetchavailabletaxis();
-  }, []);
-
-  const fetchTotalStations = async () => {
-    try {
-      const response = await axios.get('http://localhost:5000/stations/total');
-      setDashboardStats((prev) => ({
-        ...prev,
-        totalstations: response.data.total,
-      }));
-    } catch (error) {
-      console.error('Error fetching stations:', error);
-    } finally {
-      setLoading(false);
-      setLoadingStats(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchTotalStations();
-  }, []);
-
-  const fetchTotalStationAdmin = async () => {
-    try {
-      const response = await axios.get(
+      const stationAdminsRes = await axios.get(
         'http://localhost:5000/stationAdmins/total'
       );
-      setDashboardStats((prev) => ({
-        ...prev,
-        totalstationadmins: response.data.total,
-      }));
-    } catch (error) {
-      console.error('Error fetching stations:', error);
-    } finally {
-      setLoading(false);
-      setLoadingStats(false);
-    }
-  };
 
-  useEffect(() => {
-    fetchTotalStationAdmin();
-  }, []);
-
-  const fetchTotalDispachers = async () => {
-    try {
-      const response = await axios.get(
+      const dispatchersRes = await axios.get(
         'http://localhost:5000/dispachers/total'
       );
-      setDashboardStats((prev) => ({
-        ...prev,
-        totaldispachers: response.data.total,
-      }));
+
+      const routesRes = await axios.get('http://localhost:5000/routes/total');
+
+      const waitingTrendRes = await axios.get(
+        'http://localhost:5000/passengerqueue/passengerWaitingTrend'
+      );
+
+      const availableByStationRes = await axios.get(
+        'http://localhost:5000/taxi-queue/availableTaxiForDashboard'
+      );
+
+      const passengerTrendData = Array.isArray(waitingTrendRes.data)
+        ? waitingTrendRes.data
+        : [];
+
+      setDashboardStats({
+        totalPassengers: passengersRes.data.total,
+        totalTaxis: taxisRes.data.count,
+        availableTaxis: availableTaxisRes.data.total,
+        totalstations: stationsRes.data.total,
+        totalstationadmins: stationAdminsRes.data.total,
+        totaldispachers: dispatchersRes.data.total,
+        totalroutes: routesRes.data.total,
+        passengerWaitingTrend: passengerTrendData,
+        availableTaxisEachStation: availableByStationRes.data.map(
+          (item: any) => ({
+            from_station: item.from_station,
+            availableTaxiCount: Number(item.availableTaxiCount),
+            waitingCount: Number(item.waitingCount),
+          })
+        ),
+      });
+
+      setFilteredPassengerTrend(passengerTrendData);
+
+      setFilteredStats({
+        totalPassengers: passengersRes.data.total,
+        availableTaxis: availableTaxisRes.data.total,
+        passengerWaitingTrend: passengerTrendData,
+        availableTaxisEachStation: availableByStationRes.data.map(
+          (item: any) => ({
+            from_station: item.from_station,
+            availableTaxiCount: Number(item.availableTaxiCount),
+            waitingCount: Number(item.waitingCount),
+          })
+        ),
+      });
     } catch (error) {
-      console.error('Error fetching stations:', error);
+      console.error('Error fetching data:', error);
+      message.error('Failed to load dashboard data');
     } finally {
       setLoading(false);
       setLoadingStats(false);
     }
   };
 
-  useEffect(() => {
-    fetchTotalDispachers();
-  }, []);
-
-  const fetchTotalRoutes = async () => {
+  const fetchStationData = async (stationId: string) => {
+    setLoadingStats(true);
     try {
-      const response = await axios.get('http://localhost:5000/routes/total');
-      setDashboardStats((prev) => ({
-        ...prev,
-        totalroutes: response.data.total,
-      }));
-    } catch (error) {
-      console.error('Error fetching stations:', error);
-    } finally {
-      setLoading(false);
-      setLoadingStats(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchTotalRoutes();
-  }, []);
-
-  const fetchavailableTaxis = async () => {
-    try {
-      setLoading(true);
-      const stationName = stations;
-      if (!stationName) {
-        console.warn('No station specified for fetching passengers');
+      const station = stations.find((s) => s.id.toString() === stationId);
+      if (!station) {
         return;
       }
 
-      const response = await axios.get(
-        'http://localhost:5000/taxi-queue/availableTaxiForDashboard'
-        // {
-        //   params: { route: stationName },
-        // }
+      const stationName = station.StationName;
+
+      const passengersRes = await axios.get(
+        `http://localhost:5000/passengerqueue/station/${stationName}`
       );
 
-      console.log('✅ Fetched available taxis data:', response.data);
+      const availableTaxisRes = await axios.get(
+        `http://localhost:5000/taxi-queue/station/${stationName}`
+      );
 
-      setDashboardStats((prev) => ({
-        ...prev,
-        availableTaxisEachStation: response.data.map((item: any) => ({
-          from_station: item.from_station,
-          availableTaxiCount: Number(item.availableTaxiCount),
-          waitingCount: Number(item.waitingCount),
-        })),
-      }));
+      const waitingTrendRes = await axios.get(
+        `http://localhost:5000/passengerqueue/station/${stationName}/trend`
+      );
 
-      // setDashboardStats((prev) => ({
-      //   ...prev,
-      //   availableTaxisEachStation: response.data.total,
-      // }));
+      const availableByStationRes = await axios.get(
+        `http://localhost:5000/taxi-queue/station/${stationName}/dashboard`
+      );
+
+      const stationTrendData = Array.isArray(waitingTrendRes.data)
+        ? waitingTrendRes.data
+        : [];
+
+      setFilteredStats({
+        totalPassengers: passengersRes.data.total || 0,
+        availableTaxis: availableTaxisRes.data.total || 0,
+        passengerWaitingTrend: stationTrendData,
+        availableTaxisEachStation: Array.isArray(availableByStationRes.data)
+          ? availableByStationRes.data.map((item: any) => ({
+              from_station: item.from_station,
+              availableTaxiCount: Number(item.availableTaxiCount),
+              waitingCount: Number(item.waitingCount),
+            }))
+          : [],
+      });
+
+      if (dateRange && dateRange[0] && dateRange[1]) {
+        const filtered = filterTrendByDateRange(
+          stationTrendData,
+          dateRange[0],
+          dateRange[1]
+        );
+        setFilteredPassengerTrend(filtered);
+      } else {
+        setFilteredPassengerTrend(stationTrendData);
+      }
     } catch (error) {
-      console.error('Error fetching taxis:', error);
+      console.error('Error fetching station data:', error);
+
+      filterExistingData(stationId);
     } finally {
-      setLoading(false);
+      setLoadingStats(false);
     }
   };
 
-  console.log(`dashboardStats ----------------->>>>>>>>>> `, dashboardStats);
+  const filterExistingData = (stationId: string) => {
+    const station = stations.find((s) => s.id.toString() === stationId);
+    if (!station) return;
+
+    const stationName = station.StationName;
+
+    const filteredAvailableTaxis =
+      dashboardStats.availableTaxisEachStation?.filter(
+        (item) => item.from_station === stationName
+      ) || [];
+
+    const stationPassengers = filteredAvailableTaxis.reduce(
+      (sum, item) => sum + (item.waitingCount || 0),
+      0
+    );
+
+    const stationAvailableTaxis = filteredAvailableTaxis.reduce(
+      (sum, item) => sum + (item.availableTaxiCount || 0),
+      0
+    );
+
+    const allTrend = dashboardStats.passengerWaitingTrend || [];
+
+    setFilteredStats({
+      totalPassengers: stationPassengers,
+      availableTaxis: stationAvailableTaxis,
+      passengerWaitingTrend: allTrend,
+      availableTaxisEachStation: filteredAvailableTaxis,
+    });
+
+    if (dateRange && dateRange[0] && dateRange[1]) {
+      const filtered = filterTrendByDateRange(
+        allTrend,
+        dateRange[0],
+        dateRange[1]
+      );
+      setFilteredPassengerTrend(filtered);
+    } else {
+      setFilteredPassengerTrend(allTrend);
+    }
+  };
+
+  const handleStationChange = (value: string) => {
+    setSelectedStation(value);
+    if (value === 'all') {
+      setFilteredStats({
+        totalPassengers: dashboardStats.totalPassengers,
+        availableTaxis: dashboardStats.availableTaxis,
+        passengerWaitingTrend: dashboardStats.passengerWaitingTrend,
+        availableTaxisEachStation: dashboardStats.availableTaxisEachStation,
+      });
+
+      if (dateRange && dateRange[0] && dateRange[1]) {
+        const filtered = filterTrendByDateRange(
+          dashboardStats.passengerWaitingTrend || [],
+          dateRange[0],
+          dateRange[1]
+        );
+        setFilteredPassengerTrend(filtered);
+      } else {
+        setFilteredPassengerTrend(dashboardStats.passengerWaitingTrend || []);
+      }
+    } else {
+      fetchStationData(value);
+    }
+  };
+
+  const handleDateRangeChange = (
+    dates: [Dayjs | null, Dayjs | null] | null
+  ) => {
+    setDateRange(dates);
+
+    if (!dates || !dates[0] || !dates[1]) {
+      if (selectedStation === 'all') {
+        setFilteredPassengerTrend(dashboardStats.passengerWaitingTrend || []);
+      } else {
+        setFilteredPassengerTrend(filteredStats.passengerWaitingTrend || []);
+      }
+      return;
+    }
+
+    let dataToFilter: any[] = [];
+    if (selectedStation === 'all') {
+      dataToFilter = dashboardStats.passengerWaitingTrend || [];
+    } else {
+      dataToFilter = filteredStats.passengerWaitingTrend || [];
+    }
+
+    const filtered = filterTrendByDateRange(dataToFilter, dates[0], dates[1]);
+    setFilteredPassengerTrend(filtered);
+  };
+
+  const filterTrendByDateRange = (
+    data: any[],
+    startDate: Dayjs,
+    endDate: Dayjs
+  ) => {
+    if (!data || data.length === 0) return [];
+
+    return data.filter((item) => {
+      if (!item.time) return false;
+      const itemDate = dayjs(item.time);
+      return itemDate.isAfter(startDate) && itemDate.isBefore(endDate);
+    });
+  };
+
+  const handleTimeRangeChange = (value: string) => {
+    setTimeRange(value);
+
+    let startDate: Dayjs;
+    let endDate: Dayjs = dayjs();
+
+    switch (value) {
+      case 'today':
+        startDate = dayjs().startOf('day');
+        break;
+      case 'week':
+        startDate = dayjs().subtract(7, 'day');
+        break;
+      case 'month':
+        startDate = dayjs().subtract(1, 'month');
+        break;
+      case 'quarter':
+        startDate = dayjs().subtract(3, 'month');
+        break;
+      case 'year':
+        startDate = dayjs().subtract(1, 'year');
+        break;
+      default:
+        startDate = dayjs().subtract(7, 'day');
+    }
+
+    const newDateRange: [Dayjs, Dayjs] = [startDate, endDate];
+    setDateRange(newDateRange);
+
+    handleDateRangeChange(newDateRange);
+  };
 
   const stationPerformance3 = useMemo(() => {
-    if (!dashboardStats.availableTaxisEachStation) return [];
+    const dataSource =
+      selectedStation === 'all'
+        ? dashboardStats.availableTaxisEachStation
+        : filteredStats.availableTaxisEachStation;
 
-    return dashboardStats.availableTaxisEachStation.map((item: any) => {
+    if (!dataSource || dataSource.length === 0) return [];
+
+    return dataSource.map((item: any) => {
       const passengers = Number(item.waitingCount);
       const taxis = Number(item.availableTaxiCount);
 
@@ -331,81 +428,56 @@ const AdminDashboard = () => {
         efficiency: Number(efficiency.toFixed(1)),
       };
     });
-  }, [dashboardStats.availableTaxisEachStation]);
+  }, [
+    selectedStation,
+    dashboardStats.availableTaxisEachStation,
+    filteredStats.availableTaxisEachStation,
+  ]);
 
-  const fetchPassengerWaitingTrend = async () => {
-    try {
-      const response = await axios.get(
-        'http://localhost:5000/passengerqueue/passengerWaitingTrend'
-      );
+  const filteredPassengerTaxiDistribution = useMemo(() => {
+    const passengers =
+      selectedStation === 'all'
+        ? dashboardStats.totalPassengers
+        : filteredStats.totalPassengers;
+    const taxis =
+      selectedStation === 'all'
+        ? dashboardStats.availableTaxis
+        : filteredStats.availableTaxis;
 
-      setDashboardStats((prev) => ({
-        ...prev,
-        passengerWaitingTrend: Array.isArray(response.data)
-          ? response.data
-          : [],
-      }));
-    } catch (error) {
-      console.error('Error fetching waiting trend:', error);
+    return [
+      {
+        name: 'Passengers in Queue',
+        value: passengers || 0,
+        color: CHART_COLORS.primary,
+      },
+      {
+        name: 'Available Taxis',
+        value: taxis || 0,
+        color: CHART_COLORS.success,
+      },
+    ];
+  }, [selectedStation, dashboardStats, filteredStats]);
+
+  const formatDateRange = () => {
+    if (!dateRange || !dateRange[0] || !dateRange[1]) {
+      return 'All Time';
     }
+    return `${dateRange[0].format('MMM D, YYYY')} - ${dateRange[1].format(
+      'MMM D, YYYY'
+    )}`;
   };
 
   useEffect(() => {
-    fetchPassengerWaitingTrend();
+    const fetchInitialData = async () => {
+      await fetchStations();
+      await fetchAllData();
+    };
+    fetchInitialData();
   }, []);
 
   useEffect(() => {
-    if (stations) {
-      fetchavailableTaxis();
-    }
-  }, [stations]);
-  const generateChartData = (stationsData: Station[]) => {
-    if (!stationsData || stationsData.length === 0) {
-      setStationPerformance([]);
-      return;
-    }
-
-    const performanceData = stationsData.slice(0, 5).map((station) => ({
-      name: station.StationName, // safe now
-      passengers: station.queue ?? 0,
-      taxis: station.taxis ?? 0,
-      efficiency:
-        station.queue > 0
-          ? Math.round((station.taxis / station.queue) * 100)
-          : 0,
-    }));
-
-    setStationPerformance(performanceData);
-  };
-  useEffect(() => {
-    fetchStations();
+    handleTimeRangeChange('week');
   }, []);
-
-  useEffect(() => {
-    if (stations.length > 0) {
-      generateChartData(stations);
-    }
-  }, [stations]);
-
-  useEffect(() => {
-    if (
-      dashboardStats.totalPassengers !== undefined &&
-      dashboardStats.availableTaxis !== undefined
-    ) {
-      setPassengerTaxiDistribution([
-        {
-          name: 'Passengers in Queue',
-          value: dashboardStats.totalPassengers,
-          color: CHART_COLORS.primary,
-        },
-        {
-          name: 'Available Taxis',
-          value: dashboardStats.availableTaxis,
-          color: CHART_COLORS.success,
-        },
-      ]);
-    }
-  }, [dashboardStats.totalPassengers, dashboardStats.availableTaxis]);
 
   if (loading) {
     return (
@@ -422,13 +494,17 @@ const AdminDashboard = () => {
     );
   }
 
-  const safePieData = passengerTaxiDistribution.every((d) => d.value === 0)
+  const safePieData = filteredPassengerTaxiDistribution.every(
+    (d) => d.value === 0
+  )
     ? [{ name: 'No Data', value: 1, color: '#d9d9d9' }]
-    : passengerTaxiDistribution;
+    : filteredPassengerTaxiDistribution;
+
+  const displayData =
+    selectedStation === 'all' ? dashboardStats : filteredStats;
 
   return (
     <div style={{ padding: screens.xs ? '16px' : '24px' }}>
-      {/* Dashboard Filters */}
       <Card size="small" style={{ marginBottom: 24 }}>
         <Row gutter={[16, 16]} align="middle">
           <Col xs={24} sm={12} md={8}>
@@ -436,7 +512,7 @@ const AdminDashboard = () => {
               <Text strong>Time Range</Text>
               <Select
                 value={timeRange}
-                onChange={setTimeRange}
+                onChange={handleTimeRangeChange}
                 style={{ width: '100%' }}
                 size={screens.xs ? 'small' : 'middle'}
               >
@@ -453,13 +529,14 @@ const AdminDashboard = () => {
               <Text strong>Station Filter</Text>
               <Select
                 value={selectedStation}
-                onChange={setSelectedStation}
+                onChange={handleStationChange}
                 style={{ width: '100%' }}
                 size={screens.xs ? 'small' : 'middle'}
+                loading={loading}
               >
                 <Option value="all">All Stations</Option>
                 {stations.map((station) => (
-                  <Option key={station.id} value={station.id}>
+                  <Option key={station.id} value={station.id.toString()}>
                     {station.StationName}
                   </Option>
                 ))}
@@ -470,21 +547,25 @@ const AdminDashboard = () => {
             <Space direction="vertical" size="small">
               <Text strong>Date Range</Text>
               <RangePicker
+                value={dateRange}
+                onChange={handleDateRangeChange}
                 style={{ width: '100%' }}
                 size={screens.xs ? 'small' : 'middle'}
+                allowClear={true}
               />
             </Space>
           </Col>
         </Row>
       </Card>
 
-      {/* Key Statistics Cards */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
-              title="Total Passengers"
-              value={dashboardStats.totalPassengers}
+              title={`${
+                selectedStation === 'all' ? 'Total' : 'Station'
+              } Passengers`}
+              value={displayData.totalPassengers || 0}
               prefix={<FaUsers style={{ color: CHART_COLORS.primary }} />}
               loading={loadingStats}
               suffix={
@@ -511,7 +592,7 @@ const AdminDashboard = () => {
             <Progress
               percent={Math.min(
                 100,
-                ((dashboardStats.totalPassengers || 0) / 1000) * 100
+                ((displayData.totalPassengers || 0) / 1000) * 100
               )}
               size="small"
               status="active"
@@ -541,14 +622,16 @@ const AdminDashboard = () => {
         <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
-              title="Total Station admins"
-              value={dashboardStats.totalstationadmins || 0}
-              prefix={<GrUserAdmin style={{ color: 'red' }} />}
+              title={`${
+                selectedStation === 'all' ? 'Total' : 'Station'
+              } Available Taxis`}
+              value={displayData.availableTaxis || 0}
+              prefix={<FaTaxi style={{ color: 'green' }} />}
             />
             <Progress
               percent={Math.min(
                 100,
-                ((dashboardStats.totalstationadmins || 0) / 300) * 100
+                ((displayData.availableTaxis || 0) / 300) * 100
               )}
               size="small"
               status="active"
@@ -578,90 +661,88 @@ const AdminDashboard = () => {
         </Col>
       </Row>
 
-      {/* Main Charts Row */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        {/* Passenger Trend Chart */}
         <Col xs={24} lg={12}>
           <Card
             title={
               <Space>
                 <LineChartOutlined />
-                <Text strong>Passenger Trend (Last 7 Days)</Text>
+                <Text strong>
+                  {selectedStation === 'all' ? 'Overall' : 'Station'} Passenger
+                  Trend
+                </Text>
               </Space>
             }
-            extra={
-              <Select size="small" defaultValue="week" style={{ width: 100 }}>
-                <Option value="week">Week</Option>
-                <Option value="month">Month</Option>
-              </Select>
-            }
+            extra={<Tag color="blue">{formatDateRange()}</Tag>}
           >
             <div style={{ height: 300 }}>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={dashboardStats.passengerWaitingTrend}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  {/* <XAxis 
+              {filteredPassengerTrend.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={filteredPassengerTrend}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
                       dataKey="time"
-                      
-                    /> */}
-                  {/* <XAxis
-                    dataKey="time"
-                    tickFormatter={(value) =>
-                      new Date(value).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })
-                    }
-                  /> */}
-
-                  <XAxis
-                    dataKey="time"
-                    tickFormatter={(value) =>
-                      new Date(value).toLocaleDateString(undefined, {
-                        month: 'short',
-                        day: 'numeric',
-                      })
-                    }
-                    minTickGap={30}
-                  />
-
-                  <YAxis />
-                  <RechartsTooltip />
-                  <Legend />
-
-                  <Line
-                    type="monotone"
-                    dataKey="totalWaiting"
-                    name="Passengers Waiting"
-                    stroke={CHART_COLORS.primary}
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+                      tickFormatter={(value) =>
+                        new Date(value).toLocaleDateString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                        })
+                      }
+                      minTickGap={30}
+                    />
+                    <YAxis />
+                    <RechartsTooltip
+                      labelFormatter={(value) =>
+                        new Date(value).toLocaleDateString(undefined, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })
+                      }
+                    />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="totalWaiting"
+                      name="Passengers Waiting"
+                      stroke={CHART_COLORS.primary}
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div
+                  style={{
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#999',
+                  }}
+                >
+                  <Text>No data available for the selected date range</Text>
+                </div>
+              )}
             </div>
           </Card>
         </Col>
 
-        {/* Station Performance Chart */}
         <Col xs={24} lg={12}>
           <Card
             title={
               <Space>
                 <BarChartOutlined />
-                <Text strong>Top Station Performance</Text>
+                <Text strong>
+                  {selectedStation === 'all' ? 'Top Station' : 'Station'}{' '}
+                  Performance
+                </Text>
               </Space>
-            }
-            extra={
-              <Button type="link" size="small">
-                View All
-              </Button>
             }
           >
             <div style={{ height: 300 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={stationPerformance3}>
-                  {/* <BarChart data={stationPerformance}> */}
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis dataKey="name" />
                   <YAxis />
@@ -692,15 +773,16 @@ const AdminDashboard = () => {
         </Col>
       </Row>
 
-      {/* Distribution Charts Row */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        {/* Queue Distribution Chart */}
         <Col xs={24} md={12} lg={6}>
           <Card
             title={
               <Space>
                 <PieChartOutlined />
-                <Text strong>Passengers vs Available Taxis</Text>
+                <Text strong>
+                  {selectedStation === 'all' ? 'Overall' : 'Station'} Queue
+                  Distribution
+                </Text>
               </Space>
             }
           >
@@ -708,7 +790,7 @@ const AdminDashboard = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={passengerTaxiDistribution}
+                    data={filteredPassengerTaxiDistribution}
                     cx="50%"
                     cy="50%"
                     innerRadius={40}
@@ -719,7 +801,7 @@ const AdminDashboard = () => {
                       `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`
                     }
                   >
-                    {passengerTaxiDistribution.map((entry, index) => (
+                    {filteredPassengerTaxiDistribution.map((entry, index) => (
                       <Cell key={index} fill={entry.color} />
                     ))}
                     {safePieData.map((entry, index) => (
@@ -732,12 +814,10 @@ const AdminDashboard = () => {
             </div>
 
             <div style={{ marginTop: 16, textAlign: 'center' }}>
-              <Text strong>
-                Total Passengers: {dashboardStats.totalPassengers || 0}
-              </Text>
+              <Text strong>Passengers: {displayData.totalPassengers || 0}</Text>
               <br />
               <Text strong>
-                Available Taxis: {dashboardStats.availableTaxis || 0}
+                Available Taxis: {displayData.availableTaxis || 0}
               </Text>
             </div>
           </Card>
@@ -761,15 +841,12 @@ const AdminDashboard = () => {
                 }}
               >
                 <Text strong>Taxis Available</Text>
-                <Text>
-                  {dashboardStats.availableTaxis || 0}
-                  {/* {taxisByStatus.find(t => t.name === 'Available')?.value || 0} / {dashboardStats.totalTaxis || 0} */}
-                </Text>
+                <Text>{displayData.availableTaxis || 0}</Text>
               </Space>
               <Progress
                 percent={Math.min(
                   100,
-                  ((dashboardStats.availableTaxis || 0) / 300) * 100
+                  ((displayData.availableTaxis || 0) / 300) * 100
                 )}
                 size="small"
                 status="active"
@@ -777,7 +854,6 @@ const AdminDashboard = () => {
               />
             </div>
 
-            {/* Taxis in Queue (On Trip) */}
             <div style={{ marginBottom: '20px' }}>
               <Space
                 style={{
@@ -788,17 +864,17 @@ const AdminDashboard = () => {
               >
                 <Text strong>Taxis Unavailable</Text>
                 <Text strong>
-                  {dashboardStats.totalTaxis && dashboardStats.availableTaxis
-                    ? dashboardStats.totalTaxis - dashboardStats.availableTaxis
+                  {dashboardStats.totalTaxis && displayData.availableTaxis
+                    ? dashboardStats.totalTaxis - displayData.availableTaxis
                     : 0}
                 </Text>
               </Space>
               <Progress
                 percent={
-                  dashboardStats.totalTaxis && dashboardStats.availableTaxis
+                  dashboardStats.totalTaxis && displayData.availableTaxis
                     ? Math.round(
                         ((dashboardStats.totalTaxis -
-                          dashboardStats.availableTaxis) /
+                          displayData.availableTaxis) /
                           dashboardStats.totalTaxis) *
                           100
                       )
@@ -836,8 +912,6 @@ const AdminDashboard = () => {
                 const color =
                   status === 'active'
                     ? CHART_COLORS.success
-                    : status === 'busy'
-                    ? CHART_COLORS.warning
                     : CHART_COLORS.error;
 
                 return (
