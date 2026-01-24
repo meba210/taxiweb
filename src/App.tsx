@@ -7,7 +7,6 @@ import AdminDashboard from './Pages/AdminDashboard';
 import Dispachers from './Pages/Dispachers';
 import HomePage from './Pages/HomePage';
 import Routess from './Pages/Routes';
-import ReportsPage from './Pages/StationAdminReport';
 import StationAdmins from './Pages/StationAdmins';
 import Stations from './Pages/Stations';
 import StationsAdminDashboard from './Pages/StationsAdminDashboard';
@@ -21,6 +20,8 @@ import Login from './Components/modals/Login';
 
 import TaxiDrivers from './Pages/TaxiDrivers';
 import Users from './Pages/Users';
+import AdminReports from './Pages/adminReports';
+import StationAdminReport from './Pages/StationAdminReport';
 function App() {
   return (
     <>
@@ -51,6 +52,7 @@ function App() {
               />
               <Route path="TaxiDrivers" element={<TaxiDrivers />} />
               <Route path="allUsers" element={<Users />} />
+              <Route path="Reports" element={<AdminReports />} />
             </Route>
 
             <Route
@@ -63,7 +65,7 @@ function App() {
               <Route path="Dispachers" element={<Dispachers />} />
               <Route path="Dispachers/:id" element={<DispatcherDetail />} />
               <Route path="TaxiAssignment" element={<TaxiAssignment />} />
-              <Route path="Reports" element={<ReportsPage />} />
+              <Route path="Reports" element={<StationAdminReport />} />
               <Route path="changePassword" element={<ChangePasswordScreen />} />
             </Route>
           </Route>

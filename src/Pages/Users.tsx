@@ -3,20 +3,9 @@ import { useEffect, useState } from 'react';
 import { CiSearch, CiMail, CiPhone } from 'react-icons/ci';
 import { TbUser, TbBuildingEstate } from 'react-icons/tb';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
 
 type User = {
-  id: number;
-  FullName: string;
-  Email: string;
-  PhoneNumber: string;
-  UserName: string;
-  Role: string;
-  isActive: boolean;
-};
-
-type StationAdmin = {
   id: number;
   FullName: string;
   Email: string;

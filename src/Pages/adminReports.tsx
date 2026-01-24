@@ -21,7 +21,7 @@ type RouteTaxi = {
   Dispatcher?: string;
 };
 
-export default function StationAdminReport() {
+export default function AdminReports() {
   const [searchText, setSearchText] = useState('');
   const [routeTaxiList, setRouteTaxiList] = useState<RouteTaxi[]>([]);
   const [loading, setLoading] = useState(false);
@@ -75,7 +75,7 @@ export default function StationAdminReport() {
     setLoading(true);
     try {
       const res = await axios.get(
-        'http://localhost:5000/taxiAssignment/allStationInfo',
+        'http://localhost:5000/taxiAssignment/allStationsFullInfo',
         {
           headers: { Authorization: `Bearer ${token}` },
         }

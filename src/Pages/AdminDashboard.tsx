@@ -6,7 +6,6 @@ import {
   Statistic,
   Typography,
   Space,
-  Button,
   Select,
   DatePicker,
   Grid,
@@ -42,7 +41,6 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { GrUserAdmin } from 'react-icons/gr';
 import dayjs, { Dayjs } from 'dayjs';
 
 const { Title, Text } = Typography;
@@ -82,12 +80,6 @@ type Station = {
   taxis: number;
   queue: number;
   status: 'active' | 'inactive';
-};
-
-type ChartData = {
-  name?: string;
-  value?: number;
-  [key: string]: any;
 };
 
 const AdminDashboard = () => {

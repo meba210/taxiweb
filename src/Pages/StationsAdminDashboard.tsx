@@ -6,13 +6,11 @@ import {
   Statistic,
   Typography,
   Space,
-  Select,
   Grid,
   Spin,
   Tag,
   Avatar,
   message,
-  DatePicker,
 } from 'antd';
 import {
   TeamOutlined,
@@ -64,12 +62,11 @@ type StationStats = {
 };
 
 const StationsAdminDashboard = () => {
-  const [timeRange, setTimeRange] = useState('today');
-  const [selectedRoute, setSelectedRoute] = useState('all');
-  const [dateRange, setDateRange] = useState<
-    [dayjs.Dayjs | null, dayjs.Dayjs | null] | null
-  >(null);
-  const [loading, setLoading] = useState(false);
+  const [selectedRoute] = useState('all');
+  const [dateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null] | null>(
+    null
+  );
+  const [loading] = useState(false);
   const [dataLoading, setDataLoading] = useState(false);
   const screens = useBreakpoint();
   const token = localStorage.getItem('token');
@@ -237,113 +234,112 @@ const StationsAdminDashboard = () => {
     }
   };
 
-  const fetchRouteData = async (routeName: string) => {
-    if (!stations || routeName === 'all') {
-      await fetchAllStationData();
-      return;
-    }
+  // const fetchRouteData = async (routeName: string) => {
+  //   if (!stations || routeName === 'all') {
+  //     await fetchAllStationData();
+  //     return;
+  //   }
 
-    setDataLoading(true);
-    try {
-      // Fetch passengers queue for specific route
-      const passengersRes = await axios.get(
-        `http://localhost:5000/passengerqueue/eachstation/route/${routeName}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+  //   setDataLoading(true);
+  //   try {
+  //     // Fetch passengers queue for specific route
+  //     const passengersRes = await axios.get(
+  //       `http://localhost:5000/passengerqueue/eachstation/route/${routeName}`,
+  //       {
+  //         headers: { Authorization: `Bearer ${token}` },
+  //       }
+  //     );
 
-      // Fetch taxis for specific route
-      const taxisRes = await axios.get(
-        `http://localhost:5000/taxis/eachstation/route/${routeName}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+  //     // Fetch taxis for specific route
+  //     const taxisRes = await axios.get(
+  //       `http://localhost:5000/taxis/eachstation/route/${routeName}`,
+  //       {
+  //         headers: { Authorization: `Bearer ${token}` },
+  //       }
+  //     );
 
-      // Fetch available taxis for specific route
-      const availableTaxisRes = await axios.get(
-        `http://localhost:5000/taxi-queue/availableTaxiseachstation/route/${routeName}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+  //     // Fetch available taxis for specific route
+  //     const availableTaxisRes = await axios.get(
+  //       `http://localhost:5000/taxi-queue/availableTaxiseachstation/route/${routeName}`,
+  //       {
+  //         headers: { Authorization: `Bearer ${token}` },
+  //       }
+  //     );
 
-      // Fetch passenger waiting trend for specific route
-      const waitingTrendRes = await axios.get(
-        `http://localhost:5000/passengerqueue/passengerWaitingTrendStation/route/${routeName}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+  //     // Fetch passenger waiting trend for specific route
+  //     const waitingTrendRes = await axios.get(
+  //       `http://localhost:5000/passengerqueue/passengerWaitingTrendStation/route/${routeName}`,
+  //       {
+  //         headers: { Authorization: `Bearer ${token}` },
+  //       }
+  //     );
 
-      // Fetch passenger waiting by destination for specific route
-      const waitingByDestinationRes = await axios.get(
-        `http://localhost:5000/passengerqueue/passengerWaitingByDestination/route/${routeName}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+  //     // Fetch passenger waiting by destination for specific route
+  //     const waitingByDestinationRes = await axios.get(
+  //       `http://localhost:5000/passengerqueue/passengerWaitingByDestination/route/${routeName}`,
+  //       {
+  //         headers: { Authorization: `Bearer ${token}` },
+  //       }
+  //     );
 
-      const destinationData = Array.isArray(waitingByDestinationRes.data)
-        ? waitingByDestinationRes.data
-        : [];
-      const uniqueDates = [...new Set(destinationData.map((d: any) => d.date))];
-      setDates(uniqueDates);
+  //     const destinationData = Array.isArray(waitingByDestinationRes.data)
+  //       ? waitingByDestinationRes.data
+  //       : [];
+  //     const uniqueDates = [...new Set(destinationData.map((d: any) => d.date))];
+  //     setDates(uniqueDates);
 
-      const chartData = destinationData.reduce((acc: any[], curr: any) => {
-        let routeObj = acc.find((r: any) => r.route === curr.route);
-        if (!routeObj) {
-          routeObj = { route: curr.route };
-          acc.push(routeObj);
-        }
-        routeObj[curr.date] = curr.totalWaiting;
-        return acc;
-      }, []);
+  //     const chartData = destinationData.reduce((acc: any[], curr: any) => {
+  //       let routeObj = acc.find((r: any) => r.route === curr.route);
+  //       if (!routeObj) {
+  //         routeObj = { route: curr.route };
+  //         acc.push(routeObj);
+  //       }
+  //       routeObj[curr.date] = curr.totalWaiting;
+  //       return acc;
+  //     }, []);
 
-      const routeStats = {
-        passengersQueue: passengersRes.data?.total || 0,
-        totalTaxis: taxisRes.data?.total || 0,
-        availableTaxis: availableTaxisRes.data?.total || 0,
-        totaldispachers: stationStats.totaldispachers,
-        totalroutes: stationStats.totalroutes,
-        passengerWaitingTrend: Array.isArray(waitingTrendRes.data)
-          ? waitingTrendRes.data
-          : [],
-        passengerWaitingByDestination: chartData,
-      };
+  //     const routeStats = {
+  //       passengersQueue: passengersRes.data?.total || 0,
+  //       totalTaxis: taxisRes.data?.total || 0,
+  //       availableTaxis: availableTaxisRes.data?.total || 0,
+  //       totaldispachers: stationStats.totaldispachers,
+  //       totalroutes: stationStats.totalroutes,
+  //       passengerWaitingTrend: Array.isArray(waitingTrendRes.data)
+  //         ? waitingTrendRes.data
+  //         : [],
+  //       passengerWaitingByDestination: chartData,
+  //     };
 
-      setFilteredData(routeStats);
-    } catch (error) {
-      console.error('Error fetching route data:', error);
+  //     setFilteredData(routeStats);
+  //   } catch (error) {
+  //     console.error('Error fetching route data:', error);
 
-      filterExistingData(routeName);
-    } finally {
-      setDataLoading(false);
-    }
-  };
+  //     filterExistingData(routeName);
+  //   } finally {
+  //     setDataLoading(false);
+  //   }
+  // };
 
-  const filterExistingData = (routeName: string) => {
-    const filteredDestination =
-      stationStats.passengerWaitingByDestination?.filter(
-        (item: any) => item.route === routeName
-      ) || [];
+  // const filterExistingData = (routeName: string) => {
+  //   const filteredDestination =
+  //     stationStats.passengerWaitingByDestination?.filter(
+  //       (item: any) => item.route === routeName
+  //     ) || [];
 
-    const routePassengers = filteredDestination.reduce((total, item) => {
-      const datesTotal = Object.values(item).reduce((sum: number, val: any) => {
-        return typeof val === 'number' ? sum + val : sum;
-      }, 0);
-      return total + datesTotal;
-    }, 0);
+  //   const routePassengers = filteredDestination.reduce((total, item) => {
+  //     const datesTotal = Object.values(item).reduce((sum: number, val: any) => {
+  //       return typeof val === 'number' ? sum + val : sum;
+  //     }, 0);
+  //     return total + datesTotal;
+  //   }, 0);
 
-    setFilteredData({
-      ...stationStats,
-      passengersQueue: routePassengers,
-      passengerWaitingByDestination: filteredDestination,
-    });
-  };
+  //   setFilteredData({
+  //     ...stationStats,
+  //     passengersQueue: routePassengers,
+  //     passengerWaitingByDestination: filteredDestination,
+  //   });
+  // };
 
-  // Calculate efficiency
   const passengers = filteredData.passengersQueue ?? 0;
   const taxis = filteredData.totalTaxis ?? 0;
   const efficiency =
@@ -353,7 +349,6 @@ const StationsAdminDashboard = () => {
           Math.min((taxis / Math.max(passengers, 1)) * 100, 100).toFixed(2)
         );
 
-  // Initial data fetch
   useEffect(() => {
     fetchAssignedStation();
     fetchRoutes();
@@ -365,7 +360,6 @@ const StationsAdminDashboard = () => {
     }
   }, [stations]);
 
-  // Apply date range filter
   useEffect(() => {
     if (dateRange && dateRange[0] && dateRange[1]) {
       const [start, end] = dateRange;
@@ -639,7 +633,6 @@ const StationsAdminDashboard = () => {
         </Col>
       </Row>
 
-      {/* Main Charts Section - Fourth Row (First chart full width) */}
       <Row gutter={[16, 16]} style={{ marginBottom: screens.xs ? 16 : 24 }}>
         <Col xs={24}>
           <Card
@@ -698,7 +691,6 @@ const StationsAdminDashboard = () => {
         </Col>
       </Row>
 
-      {/* Queue Throughout Day */}
       <Row gutter={[16, 16]}>
         <Col xs={24}>
           <Card
