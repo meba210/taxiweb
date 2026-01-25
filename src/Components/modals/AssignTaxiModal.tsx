@@ -15,6 +15,7 @@ import axios from 'axios';
 import { FaArrowRightLong, FaTaxi, FaRoute } from 'react-icons/fa6';
 import { IoCarSport } from 'react-icons/io5';
 import { FaMapMarkerAlt } from 'react-icons/fa';
+import { socket } from '../../socket';
 type Props = {
   isModalOpen: boolean;
   onClose: () => void;
@@ -36,6 +37,8 @@ export default function AssignTaxiModal({
   const [routeModalOpen, setRouteModalOpen] = useState(false);
   const [selectedRoute, setSelectedRoute] = useState<number | null>(null);
 
+  console.log('object==================', routeName);
+
   const fetchQueue = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -52,6 +55,34 @@ export default function AssignTaxiModal({
       console.error('Failed to fetch taxis:', err);
     }
   };
+
+  useEffect(() => {
+    if (!isModalOpen || !routeName) return;
+
+    const onConnect = () => {
+      console.log('🟢 socket connected:', socket.id);
+      console.log('➡️ joining route:', routeName);
+      socket.emit('joinRoute', routeName);
+    };
+
+    if (!socket.connected) {
+      socket.connect();
+    }
+
+    socket.on('connect', onConnect);
+
+    const handler = (data: any) => {
+      console.log('🔥 taxi assigned event received:', data);
+      fetchQueue();
+    };
+
+    socket.on('taxi:assigned', handler);
+
+    return () => {
+      socket.off('connect', onConnect);
+      socket.off('taxi:assigned', handler);
+    };
+  }, [isModalOpen, routeName]);
 
   const fetchRoutes = async () => {
     try {
@@ -109,6 +140,7 @@ export default function AssignTaxiModal({
           to_route: selectedRoute,
           from_route: routeName,
         },
+
         {
           headers: { Authorization: `Bearer ${token}` },
         }

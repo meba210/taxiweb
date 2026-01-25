@@ -39,7 +39,7 @@ const CreateRoutes: React.FC<CreateRoutesProps> = ({
   const [EndTerminal, setEndTerminal] = useState('');
   const [loading, setLoading] = useState(false);
   const [isFormValid, setIsFormValid] = useState(false);
-
+  const [routeExistsError, setRouteExistsError] = useState('');
   useEffect(() => {
     const isValid = EndTerminal && EndTerminal.trim().length >= 2;
     setIsFormValid(!!isValid);
@@ -89,11 +89,15 @@ const CreateRoutes: React.FC<CreateRoutesProps> = ({
       onRoutesCreated?.();
       handleCancel();
     } catch (err: any) {
-      console.error('Create route error:', err.response?.data || err);
-      message.error({
-        content: err.response?.data?.message || 'Failed to create route',
-        duration: 4,
-      });
+      console.error(err);
+
+      if (err.response?.status === 409) {
+        setRouteExistsError('This route already exists');
+      } else {
+        message.error(
+          err.response?.data?.message || 'Failed to create station'
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -175,19 +179,20 @@ const CreateRoutes: React.FC<CreateRoutesProps> = ({
             }
             required
             validateStatus={
-              EndTerminal
+              routeExistsError
+                ? 'error'
+                : EndTerminal
                 ? EndTerminal.trim().length >= 2
                   ? 'success'
                   : 'error'
                 : ''
             }
             help={
-              EndTerminal
+              routeExistsError
+                ? routeExistsError
+                : EndTerminal
                 ? EndTerminal.trim().length < 2
                   ? 'Terminal name should be at least 2 characters long'
-                  : StartTerminal.trim().toLowerCase() ===
-                    EndTerminal.trim().toLowerCase()
-                  ? 'End terminal cannot be same as start terminal'
                   : ''
                 : 'Enter the destination point of the route'
             }
@@ -200,6 +205,7 @@ const CreateRoutes: React.FC<CreateRoutesProps> = ({
 
                 const limited = value.substring(0, 50);
                 setEndTerminal(limited);
+                setRouteExistsError('');
               }}
               size="large"
               prefix={

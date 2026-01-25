@@ -18,6 +18,7 @@ const CreateStations: React.FC<CreateStationProps> = ({
   const [City, setCity] = useState('');
   const [location, setLocation] = useState('');
   const [loading, setLoading] = useState(false);
+  const [stationExistsError, setStationExistsError] = useState('');
 
   const handleCreate = async () => {
     if (!StationName || !City || !location) {
@@ -47,7 +48,14 @@ const CreateStations: React.FC<CreateStationProps> = ({
       handleCancel();
     } catch (err: any) {
       console.error(err);
-      message.error(err.response?.data?.message || 'Failed to create station');
+
+      if (err.response?.status === 409) {
+        setStationExistsError('This station already exists');
+      } else {
+        message.error(
+          err.response?.data?.message || 'Failed to create station'
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -112,7 +120,10 @@ const CreateStations: React.FC<CreateStationProps> = ({
             <Input
               placeholder="e.g., Bole Airport Terminal"
               value={StationName}
-              onChange={(e) => setStationName(e.target.value)}
+              onChange={(e) => {
+                setStationName(e.target.value);
+                setStationExistsError('');
+              }}
               size={window.innerWidth < 768 ? 'middle' : 'large'}
               prefix={<FaBuilding style={{ color: '#bfbfbf' }} />}
               style={{ borderRadius: '6px', width: '100%' }}
@@ -123,6 +134,13 @@ const CreateStations: React.FC<CreateStationProps> = ({
                 style={{ color: '#ff4d4f', fontSize: '12px', marginTop: '4px' }}
               >
                 Station name should be at least 2 characters
+              </div>
+            )}
+            {stationExistsError && (
+              <div
+                style={{ color: '#ff4d4f', fontSize: '12px', marginTop: '4px' }}
+              >
+                {stationExistsError}
               </div>
             )}
           </div>

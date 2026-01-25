@@ -96,6 +96,13 @@ export default function Layouts({ role }: LayoutsProps) {
         path: '/admin/allUsers',
         color: 'bg-gradient-to-r from-gray-600 to-gray-700',
       },
+      {
+        key: 'Reports',
+        icon: <TbReportAnalytics />,
+        label: 'Reports',
+        path: '/admin/Reports',
+        color: 'bg-gradient-to-r from-orange-500 to-amber-600',
+      },
     ],
     stationAdmin: [
       {
