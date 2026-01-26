@@ -23,8 +23,13 @@ export default function TaxAssignment() {
   const [selectedRoute, setSelectedRoute] = useState<RouteTaxi | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const TAXI_CAPACITY = 15;
+
   const getDemandStatus = (passengers: number, taxis: number) => {
-    if (passengers > 50 && taxis < 3) {
+    const capacity = taxis * TAXI_CAPACITY;
+    const utilization = passengers / capacity;
+
+    if (utilization > 1) {
       return {
         status: 'high',
         text: 'High Demand',
@@ -32,7 +37,31 @@ export default function TaxAssignment() {
         icon: <FaExclamationTriangle />,
       };
     }
-    return { status: 'normal', text: 'Normal', color: 'success', icon: null };
+
+    if (utilization <= 0.3) {
+      return {
+        status: 'oversupply',
+        text: 'Too Many Taxis',
+        color: 'cyan',
+        icon: null,
+      };
+    }
+
+    if (utilization >= 0.8) {
+      return {
+        status: 'medium',
+        text: 'Near Capacity',
+        color: 'warning',
+        icon: <CiWarning />,
+      };
+    }
+
+    return {
+      status: 'normal',
+      text: 'Normal',
+      color: 'success',
+      icon: null,
+    };
   };
 
   const columns: ColumnsType<RouteTaxi> = [
@@ -128,13 +157,7 @@ export default function TaxAssignment() {
       render: (_: any, record: RouteTaxi) => {
         const demand = getDemandStatus(record.WaitingCount, record.Taxis);
         return (
-          <Tooltip
-            title={
-              demand.status === 'high'
-                ? 'High passenger demand with insufficient taxis'
-                : 'Normal operating conditions'
-            }
-          >
+          <Tooltip title={demand.text}>
             <Tag
               color={demand.color}
               icon={demand.icon}
@@ -178,9 +201,14 @@ export default function TaxAssignment() {
     item.Routes.toLowerCase().includes(searchText.toLowerCase())
   );
 
-  const highDemandRoutes = routeTaxiList.filter(
+  const highDemandRouteList = routeTaxiList.filter(
     (item) => getDemandStatus(item.WaitingCount, item.Taxis).status === 'high'
-  ).length;
+  );
+
+  const oversupplyRoutes = routeTaxiList.filter(
+    (item) =>
+      getDemandStatus(item.WaitingCount, item.Taxis).status === 'oversupply'
+  );
 
   const fetchTaxiAssignment = async () => {
     const token = localStorage.getItem('token');
@@ -207,89 +235,106 @@ export default function TaxAssignment() {
 
   return (
     <>
-      <Card className="shadow-sm border-0 mb-6" bodyStyle={{ padding: '20px' }}>
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-            <Input
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              placeholder="Search by route name..."
-              className="rounded-lg h-10 border-gray-300 focus:border-blue-500"
-              prefix={<CiSearch className="text-gray-400" />}
-              allowClear
-              style={{ minWidth: '250px' }}
-            />
+      {(highDemandRouteList.length > 0 || oversupplyRoutes.length > 0) && (
+        <Card className="mb-6 overflow-hidden border-0 shadow-lg">
+          <div className="p-1 bg-gradient-to-r from-blue-50 to-white">
+            <div className="space-y-4 p-4">
+              {highDemandRouteList.length > 0 && (
+                <div className="flex items-start space-x-3 p-3 rounded-lg bg-red-50 border border-red-100 shadow-sm">
+                  <div className="flex-shrink-0 mt-0.5">
+                    <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+                      <svg
+                        className="w-4 h-4 text-red-600"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-red-700 flex items-center gap-2">
+                      High Demand Detected
+                      <span className="px-2 py-0.5 text-xs font-semibold bg-red-100 text-red-800 rounded-full">
+                        {highDemandRouteList.length} route
+                        {highDemandRouteList.length > 1 ? 's' : ''}
+                      </span>
+                    </h4>
+                    <p className="text-red-600 mt-1">
+                      Increased passenger demand detected on:
+                      <span className="font-medium ml-1">
+                        {highDemandRouteList.map((r) => r.Routes).join(', ')}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {oversupplyRoutes.length > 0 && (
+                <div className="flex items-start space-x-3 p-3 rounded-lg bg-cyan-50 border border-cyan-100 shadow-sm">
+                  <div className="flex-shrink-0 mt-0.5">
+                    <div className="w-8 h-8 rounded-full bg-cyan-100 flex items-center justify-center">
+                      <svg
+                        className="w-4 h-4 text-cyan-600"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-cyan-700 flex items-center gap-2">
+                      Taxi Oversupply Alert
+                      <span className="px-2 py-0.5 text-xs font-semibold bg-cyan-100 text-cyan-800 rounded-full">
+                        {oversupplyRoutes.length} route
+                        {oversupplyRoutes.length > 1 ? 's' : ''}
+                      </span>
+                    </h4>
+                    <p className="text-cyan-600 mt-1">
+                      More taxis than needed on:
+                      <span className="font-medium ml-1">
+                        {oversupplyRoutes.map((r) => r.Routes).join(', ')}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        </Card>
+      )}
+      <Card className="shadow-sm border-0 mb-6" bodyStyle={{ padding: '20px' }}>
+        <Input
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          placeholder="Search by route name..."
+          prefix={<CiSearch />}
+          allowClear
+        />
       </Card>
 
-      <Card
-        className="shadow-sm border-0 overflow-hidden"
-        bodyStyle={{ padding: 0 }}
-      >
-        <div className="p-4 md:p-6 border-b border-gray-100 bg-gray-50/50">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-            <div className="flex items-center gap-2">
-              <Badge
-                count={filteredData.length}
-                showZero
-                color="blue"
-                style={{ fontSize: '12px' }}
-              />
-              <span className="text-gray-600 font-medium">Active Routes</span>
-              {highDemandRoutes > 0 && (
-                <Badge
-                  count={highDemandRoutes}
-                  color="red"
-                  style={{ fontSize: '12px' }}
-                  className="ml-2"
-                />
-              )}
-            </div>
-            <div className="text-sm text-gray-500">
-              {highDemandRoutes > 0 && (
-                <span className="text-red-600 font-medium mr-4">
-                  {highDemandRoutes} high demand routes
-                </span>
-              )}
-              Auto-refreshes every 10 seconds
-            </div>
-          </div>
-        </div>
-
+      <Card className="shadow-sm border-0">
         <Table
           columns={columns}
           dataSource={filteredData}
           rowKey="id"
           loading={loading}
-          pagination={{
-            showSizeChanger: true,
-            showQuickJumper: true,
-            className: 'px-4 md:px-6',
-            responsive: true,
-          }}
-          scroll={{ x: true }}
-          className="ant-table-striped"
-          rowClassName={(record) => {
-            const demand = getDemandStatus(record.WaitingCount, record.Taxis);
-            return demand.status === 'high' ? 'bg-red-50/30' : '';
-          }}
-          style={{
-            backgroundColor: 'transparent',
-          }}
-          components={{
-            body: {
-              cell: (props: any) => (
-                <td {...props} className="border-b border-gray-100" />
-              ),
-            },
-          }}
+          pagination={{ showSizeChanger: true }}
         />
       </Card>
 
       {modalRouteId && selectedRoute && (
         <AssignTaxiModal
-          isModalOpen={true}
+          isModalOpen
           routeId={modalRouteId}
           routeName={selectedRoute.Routes}
           onClose={() => {

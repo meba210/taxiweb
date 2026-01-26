@@ -326,8 +326,8 @@ export default function RouteDetail() {
                         index === 0
                           ? 'green'
                           : index === stations.length - 1
-                          ? 'red'
-                          : 'blue'
+                            ? 'red'
+                            : 'blue'
                       }
                       dot={
                         index === 0 ? (
@@ -348,8 +348,8 @@ export default function RouteDetail() {
                           {index === 0
                             ? 'Start Station'
                             : index === stations.length - 1
-                            ? 'End Terminal'
-                            : 'Intermediate Station'}
+                              ? 'End Terminal'
+                              : 'Intermediate Station'}
                         </div>
                       </Card>
                     </Timeline.Item>

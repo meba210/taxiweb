@@ -307,8 +307,8 @@ export default function DispatcherDetail() {
                         perm.access === 'Full'
                           ? 'success'
                           : perm.access === 'Limited'
-                          ? 'warning'
-                          : ('default' as any)
+                            ? 'warning'
+                            : ('default' as any)
                       }
                       text={perm.access}
                     />

@@ -90,7 +90,7 @@ export default function StationAdminReport() {
 
   useEffect(() => {
     fetchTaxiAssignment();
-    const interval = setInterval(fetchTaxiAssignment, 10000);
+    const interval = setInterval(fetchTaxiAssignment, 3600000);
     return () => clearInterval(interval);
   }, []);
 
@@ -102,7 +102,7 @@ export default function StationAdminReport() {
       printWindow.document.write(`
         <html>
           <head>
-            <title>Taxi Assignment Report</title>
+            <title> Report</title>
             <style>
               body { font-family: Arial, sans-serif; margin: 40px; }
               h1 { color: #333; border-bottom: 2px solid #1890ff; padding-bottom: 10px; }

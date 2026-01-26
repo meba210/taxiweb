@@ -328,7 +328,7 @@ const EditDispachersModal: React.FC<EditDispachersModalProps> = ({
       );
 
       message.success({
-        content: res.data.message || '✅ Dispatcher updated successfully!',
+        content: res.data.message || 'Dispatcher updated successfully!',
         duration: 3,
         icon: <FaCheckCircle style={{ color: '#52c41a' }} />,
       });
@@ -540,8 +540,8 @@ const EditDispachersModal: React.FC<EditDispachersModalProps> = ({
                       ? !/^[A-Za-z\s'-]+$/.test(fullName.trim())
                         ? 'Only letters, spaces, apostrophes, and hyphens'
                         : fullName.trim().length < 2
-                        ? 'Minimum 2 characters'
-                        : ''
+                          ? 'Minimum 2 characters'
+                          : ''
                       : "Dispatcher's full name"}
                   </div>
                 }

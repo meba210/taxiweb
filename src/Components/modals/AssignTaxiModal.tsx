@@ -10,18 +10,33 @@ import {
   Space,
   Alert,
 } from 'antd';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type JSX } from 'react';
 import axios from 'axios';
 import { FaArrowRightLong, FaTaxi, FaRoute } from 'react-icons/fa6';
 import { IoCarSport } from 'react-icons/io5';
 import { FaMapMarkerAlt } from 'react-icons/fa';
 import { socket } from '../../socket';
+
+type DemandLevel = 'critical' | 'high' | 'medium' | 'low' | 'optimal';
+
+type DemandMetrics = {
+  level: DemandLevel;
+  score: number;
+  priority: number;
+  color: string;
+  icon: JSX.Element;
+  description: string;
+  recommendations: string[];
+  urgency: 'immediate' | 'urgent' | 'soon' | 'monitor';
+};
 type Props = {
   isModalOpen: boolean;
   onClose: () => void;
   routeId: number;
   routeName: string;
   onAssigned: () => void;
+  demandMetrics?: DemandMetrics; // Make it optional
+  optimizationMetrics?: any;
 };
 
 export default function AssignTaxiModal({
@@ -60,8 +75,8 @@ export default function AssignTaxiModal({
     if (!isModalOpen || !routeName) return;
 
     const onConnect = () => {
-      console.log('🟢 socket connected:', socket.id);
-      console.log('➡️ joining route:', routeName);
+      console.log(' socket connected:', socket.id);
+      console.log(' joining route:', routeName);
       socket.emit('joinRoute', routeName);
     };
 
@@ -72,7 +87,7 @@ export default function AssignTaxiModal({
     socket.on('connect', onConnect);
 
     const handler = (data: any) => {
-      console.log('🔥 taxi assigned event received:', data);
+      console.log(' taxi assigned event received:', data);
       fetchQueue();
     };
 

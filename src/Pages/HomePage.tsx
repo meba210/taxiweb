@@ -91,12 +91,7 @@ export default function HomePage() {
                 >
                   TaxiLink
                 </Title>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-gradient-to-r from-green-500 to-blue-500 rounded-full animate-pulse"></div>
-                  <Text className="text-blue-600 font-semibold text-sm lg:text-base">
-                    Admin Portal
-                  </Text>
-                </div>
+                <div className="flex items-center gap-2"></div>
               </div>
             </div>
 
@@ -116,7 +111,7 @@ export default function HomePage() {
               >
                 <Space>
                   <ArrowRightOutlined />
-                  <span className="font-bold">Admin Login</span>
+                  <span className="font-bold">Login</span>
                 </Space>
               </Button>
             </div>
@@ -209,7 +204,7 @@ export default function HomePage() {
                   }
                   iconPosition="end"
                 >
-                  Access Admin Dashboard
+                  Access Dashboard
                 </Button>
 
                 <Button

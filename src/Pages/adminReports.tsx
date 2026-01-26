@@ -90,7 +90,7 @@ export default function AdminReports() {
 
   useEffect(() => {
     fetchTaxiAssignment();
-    const interval = setInterval(fetchTaxiAssignment, 10000);
+    const interval = setInterval(fetchTaxiAssignment, 3600000);
     return () => clearInterval(interval);
   }, []);
 
