@@ -7,7 +7,7 @@ import AdminDashboard from './Pages/AdminDashboard';
 import Dispachers from './Pages/Dispachers';
 import HomePage from './Pages/HomePage';
 import Routess from './Pages/Routes';
-import StationAdmins from './Pages/StationAdmins';
+// import StationAdmins from './Pages/StationAdmins';
 import Stations from './Pages/Stations';
 import StationsAdminDashboard from './Pages/StationsAdminDashboard';
 import TaxiAssignment from './Pages/TaxiAssignment';
@@ -22,6 +22,7 @@ import TaxiDrivers from './Pages/TaxiDrivers';
 import Users from './Pages/Users';
 import AdminReports from './Pages/adminReports';
 import StationAdminReport from './Pages/StationAdminReport';
+import UserDetail from './Components/DetailPages/StationAdminDetailPage';
 function App() {
   return (
     <>
@@ -45,13 +46,12 @@ function App() {
               <Route index element={<AdminDashboard />} />
               <Route path="Stations" element={<Stations />} />
               <Route path="Stations/:id" element={<StationDetail />} />
-              <Route path="StationAdmins" element={<StationAdmins />} />
-              <Route
-                path="StationAdmins/:id"
-                element={<StationAdminDetail />}
-              />
+              {/* <Route path="StationAdmins" element={<StationAdmins />} /> */}
+              // In your router configuration
               <Route path="TaxiDrivers" element={<TaxiDrivers />} />
+              // In your router configuration
               <Route path="allUsers" element={<Users />} />
+              <Route path="allUsers/:id" element={<UserDetail />} />
               <Route path="Reports" element={<AdminReports />} />
             </Route>
 

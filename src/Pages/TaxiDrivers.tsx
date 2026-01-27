@@ -258,7 +258,7 @@ export default function TaxiDrivers() {
           />
         </Card>
 
-        {/* STATS */}
+      
         <Card
           className="mb-3 sm:mb-4 shadow-sm"
           bodyStyle={{ padding: '12px 16px' }}
@@ -281,7 +281,7 @@ export default function TaxiDrivers() {
           </div>
         </Card>
 
-        {/* TABLE */}
+        
         <div className="overflow-hidden">
           <Table
             rowKey="id"

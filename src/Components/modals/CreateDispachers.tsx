@@ -196,7 +196,7 @@ const CreateDispachers: React.FC<CreateDispachersProps> = ({
       );
 
       message.success({
-        content: res.data.message || '✅ Dispatcher created successfully!',
+        content: res.data.message || ' Dispatcher created successfully!',
         duration: 3,
       });
 
@@ -385,8 +385,8 @@ const CreateDispachers: React.FC<CreateDispachersProps> = ({
                       ? !/^[A-Za-z\s'-]+$/.test(fullName.trim())
                         ? 'Only letters, spaces, apostrophes, and hyphens'
                         : fullName.trim().length < 2
-                        ? 'Minimum 2 characters'
-                        : ''
+                          ? 'Minimum 2 characters'
+                          : ''
                       : "Dispatcher's full name"}
                   </div>
                 }

@@ -23,17 +23,23 @@ import {
   FaExclamationCircle,
   FaCheckCircle,
   FaUserShield,
+  FaRoute,
+  FaUserEdit,
 } from 'react-icons/fa';
+import { MdDriveFileRenameOutline, MdAdminPanelSettings } from 'react-icons/md';
 
 const { Title, Text } = Typography;
 
-type StationAdmin = {
+type User = {
   id: number;
   FullName: string;
   Email: string;
   PhoneNumber: string;
   UserName: string;
-  Stations: string;
+  Role: string;
+  isActive: boolean;
+  Stations?: string;
+  Routes?: string;
 };
 
 type Station = {
@@ -41,17 +47,23 @@ type Station = {
   StationName: string;
 };
 
-type EditStationAdminModalProps = {
-  isOpen: boolean;
-  handleCancel: () => void;
-  StationAdmin: StationAdmin | null;
-  onUpdated: (updatedStation: StationAdmin) => void;
+type Route = {
+  id: number;
+  station_name: string;
+  EndTerminal: string;
 };
 
-const EditStationModal: React.FC<EditStationAdminModalProps> = ({
+type EditUserModalProps = {
+  isOpen: boolean;
+  handleCancel: () => void;
+  user: User | null;
+  onUpdated: (updatedUser: User) => void;
+};
+
+const EditUserModal: React.FC<EditUserModalProps> = ({
   isOpen,
   handleCancel,
-  StationAdmin,
+  user,
   onUpdated,
 }) => {
   const [form] = Form.useForm();
@@ -60,10 +72,13 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
   const [phoneNumber, setPhoneNumber] = useState<string>('');
   const [userName, setUserName] = useState('');
   const [stations, setStations] = useState<Station[]>([]);
+  const [routes, setRoutes] = useState<Route[]>([]);
   const [loading, setLoading] = useState(false);
+  const [fetchingData, setFetchingData] = useState(false);
   const [selectedStation, setSelectedStation] = useState<string>('');
+  const [selectedRoute, setSelectedRoute] = useState<string>('');
   const [isFormValid, setIsFormValid] = useState(false);
-  const [originalAdmin, setOriginalAdmin] = useState<StationAdmin | null>(null);
+  const [originalData, setOriginalData] = useState<User | null>(null);
   const [checkingUsername, setCheckingUsername] = useState(false);
   const [isUsernameAvailable, setIsUsernameAvailable] = useState<
     boolean | null
@@ -73,14 +88,29 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
   > | null>(null);
 
   const token = localStorage.getItem('token');
+  const userRole =
+    user?.Role || (user?.Routes ? 'Dispatcher' : 'Station Admin');
 
-  const fetchStationadmins = async () => {
+  const fetchData = async () => {
+    setFetchingData(true);
     try {
-      const res = await axios.get('http://localhost:5000/stations');
-      setStations(res.data);
-    } catch (err) {
-      console.error('Failed to fetch stations:', err);
-      message.error('Failed to load stations');
+      const stationsRes = await axios.get('http://localhost:5000/stations');
+      setStations(stationsRes.data);
+
+      const routesRes = await axios.get('http://localhost:5000/routes');
+      const mappedRoutes = routesRes.data.map((route: any) => ({
+        id: route.id,
+        station_name:
+          route.station_name || route.StartTerminal || 'Main Station',
+        EndTerminal: route.EndTerminal || 'Unknown Destination',
+        ...route,
+      }));
+      setRoutes(mappedRoutes);
+    } catch (err: any) {
+      console.error('Failed to fetch data:', err);
+      message.error(err.response?.data?.message || 'Failed to load data');
+    } finally {
+      setFetchingData(false);
     }
   };
 
@@ -91,10 +121,9 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
         return;
       }
 
-      if (!token) return;
       if (
-        originalAdmin &&
-        username.trim().toLowerCase() === originalAdmin.UserName.toLowerCase()
+        originalData &&
+        username.trim().toLowerCase() === originalData.UserName.toLowerCase()
       ) {
         setIsUsernameAvailable(true);
         return;
@@ -102,28 +131,64 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
 
       setCheckingUsername(true);
       try {
-        const res = await axios.get('http://localhost:5000/stationadmins', {
-          headers: { Authorization: `Bearer ${token}` },
-          params: { username: username.trim() },
+        const allUsersRes = await axios.get('http://localhost:5000/allUsers', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
 
-        const stationAdmins = res.data || [];
-        const usernameExists = stationAdmins.some(
-          (admin: any) =>
-            admin.UserName &&
-            admin.UserName.toLowerCase() === username.trim().toLowerCase() &&
-            admin.id !== originalAdmin?.id
+        const allUsers = allUsersRes.data || [];
+
+        const usernameExists = allUsers.some(
+          (user: any) =>
+            user.UserName &&
+            user.UserName.toLowerCase() === username.trim().toLowerCase() &&
+            user.id !== originalData?.id
         );
 
         setIsUsernameAvailable(!usernameExists);
       } catch (err: any) {
         console.error('Failed to check username:', err);
-        setIsUsernameAvailable(null);
+
+        try {
+          let usernameExists = false;
+
+          const stationAdminsRes = await axios.get(
+            'http://localhost:5000/stationadmins'
+          );
+          const stationAdmins = stationAdminsRes.data || [];
+          usernameExists = stationAdmins.some(
+            (admin: any) =>
+              admin.UserName &&
+              admin.UserName.toLowerCase() === username.trim().toLowerCase() &&
+              admin.id !== originalData?.id
+          );
+
+          if (!usernameExists) {
+            const dispatchersRes = await axios.get(
+              'http://localhost:5000/dispachers',
+              {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+              }
+            );
+            const dispatchers = dispatchersRes.data || [];
+            usernameExists = dispatchers.some(
+              (dispatcher: any) =>
+                dispatcher.UserName &&
+                dispatcher.UserName.toLowerCase() ===
+                  username.trim().toLowerCase() &&
+                dispatcher.id !== originalData?.id
+            );
+          }
+
+          setIsUsernameAvailable(!usernameExists);
+        } catch (fallbackErr: any) {
+          console.error('Fallback check failed:', fallbackErr);
+          setIsUsernameAvailable(null);
+        }
       } finally {
         setCheckingUsername(false);
       }
     },
-    [token, originalAdmin]
+    [token, originalData]
   );
 
   const handleUsernameChange = (value: string) => {
@@ -145,50 +210,63 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
   };
 
   useEffect(() => {
-    fetchStationadmins();
-  }, []);
-
-  useEffect(() => {
-    if (isOpen && StationAdmin) {
-      setFullName(StationAdmin.FullName);
-      setEmail(StationAdmin.Email);
-      setPhoneNumber(String(StationAdmin.PhoneNumber));
-      setUserName(StationAdmin.UserName);
-      const station = stations.find(
-        (s) => s.StationName === StationAdmin.Stations
-      );
-      setSelectedStation(station ? station.StationName.toString() : '');
-
-      setOriginalAdmin(StationAdmin);
-      setIsUsernameAvailable(true);
-
-      form.setFieldsValue({
-        FullName: StationAdmin.FullName,
-        Email: StationAdmin.Email,
-        PhoneNumber: StationAdmin.PhoneNumber,
-        UserName: StationAdmin.UserName,
-        Stations: station ? station.StationName : '',
-      });
+    if (isOpen) {
+      fetchData();
     }
-  }, [isOpen, StationAdmin, stations]);
+  }, [isOpen]);
 
   useEffect(() => {
+    if (isOpen && user) {
+      setFullName(user.FullName);
+      setEmail(user.Email);
+      setPhoneNumber(String(user.PhoneNumber));
+      setUserName(user.UserName);
+      setOriginalData(user);
+
+      if (userRole === 'Station Admin') {
+        setSelectedStation(user.Stations || '');
+        form.setFieldsValue({
+          FullName: user.FullName,
+          Email: user.Email,
+          PhoneNumber: user.PhoneNumber,
+          UserName: user.UserName,
+          assignment: user.Stations || '',
+        });
+      } else {
+        setSelectedRoute(user.Routes || '');
+        form.setFieldsValue({
+          FullName: user.FullName,
+          Email: user.Email,
+          PhoneNumber: user.PhoneNumber,
+          UserName: user.UserName,
+          assignment: user.Routes || '',
+        });
+      }
+
+      setIsUsernameAvailable(true);
+    }
+  }, [isOpen, user, form, userRole]);
+
+  useEffect(() => {
+    const hasAssignment =
+      userRole === 'Station Admin' ? selectedStation : selectedRoute;
+
     const isValid =
       fullName &&
       email &&
       phoneNumber &&
       userName &&
-      selectedStation &&
+      hasAssignment &&
       fullName.trim().length >= 2 &&
       /^[A-Za-z\s'-]+$/.test(fullName.trim()) &&
       /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) &&
-      (/^09\d{8}$/.test(phoneNumber.toString()) ||
-        /^\+2519\d{9}$/.test(phoneNumber.toString())) &&
+      (/^09\d{8}$/.test(phoneNumber.replace(/\s/g, '')) ||
+        /^\+2519\d{9}$/.test(phoneNumber.replace(/\s/g, ''))) &&
       userName.trim().length >= 3 &&
       (isUsernameAvailable === true ||
-        (originalAdmin &&
+        (originalData &&
           userName.trim().toLowerCase() ===
-            originalAdmin.UserName.toLowerCase()));
+            originalData.UserName.toLowerCase()));
 
     setIsFormValid(!!isValid);
   }, [
@@ -197,24 +275,37 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
     phoneNumber,
     userName,
     selectedStation,
+    selectedRoute,
     isUsernameAvailable,
-    originalAdmin,
+    originalData,
+    userRole,
   ]);
 
   const hasChanges = () => {
-    if (!originalAdmin) return false;
-    return (
-      fullName.trim() !== originalAdmin.FullName ||
-      email.trim() !== originalAdmin.Email ||
-      phoneNumber !== originalAdmin.PhoneNumber ||
-      userName.trim() !== originalAdmin.UserName ||
-      selectedStation !== originalAdmin.Stations
-    );
+    if (!originalData) return false;
+
+    if (userRole === 'Station Admin') {
+      return (
+        fullName.trim() !== originalData.FullName ||
+        email.trim() !== originalData.Email ||
+        phoneNumber !== originalData.PhoneNumber ||
+        userName.trim() !== originalData.UserName ||
+        selectedStation !== (originalData.Stations || '')
+      );
+    } else {
+      return (
+        fullName.trim() !== originalData.FullName ||
+        email.trim() !== originalData.Email ||
+        phoneNumber !== originalData.PhoneNumber ||
+        userName.trim() !== originalData.UserName ||
+        selectedRoute !== (originalData.Routes || '')
+      );
+    }
   };
 
   const handleUpdate = async () => {
     if (!fullName.trim()) {
-      message.warning("Please enter the admin's full name");
+      message.warning("Please enter the user's full name");
       return;
     }
 
@@ -245,10 +336,10 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
       return;
     }
 
-    const phoneStr = phoneNumber.toString();
-    if (!(/^09\d{8}$/.test(phoneStr) || /^\+2519\d{8}$/.test(phoneStr))) {
+    const phoneStr = phoneNumber.toString().replace(/\s/g, '');
+    if (!(/^09\d{8}$/.test(phoneStr) || /^\+2519\d{9}$/.test(phoneStr))) {
       message.warning(
-        'Please enter a valid Ethiopian phone number (09XXXXXXXXX or +2519XXXXXXXX)'
+        'Please enter a valid Ethiopian phone number (09XXXXXXXX or +2519XXXXXXXX)'
       );
       return;
     }
@@ -264,8 +355,8 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
     }
 
     if (
-      !originalAdmin ||
-      userName.trim().toLowerCase() !== originalAdmin.UserName.toLowerCase()
+      !originalData ||
+      userName.trim().toLowerCase() !== originalData.UserName.toLowerCase()
     ) {
       if (isUsernameAvailable === false) {
         message.warning(
@@ -280,8 +371,13 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
       }
     }
 
-    if (!selectedStation) {
+    if (userRole === 'Station Admin' && !selectedStation) {
       message.warning('Please select a station');
+      return;
+    }
+
+    if (userRole === 'Dispatcher' && !selectedRoute) {
+      message.warning('Please select an assigned route');
       return;
     }
 
@@ -290,46 +386,64 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
       return;
     }
 
+    if (!token) {
+      message.error('No token found. Please login again.');
+      return;
+    }
+
     try {
       setLoading(true);
-      const res = await axios.put(
-        `http://localhost:5000/stationadmins/${StationAdmin?.id}`,
-        {
-          FullName: fullName.trim(),
-          Email: email.trim().toLowerCase(),
-          PhoneNumber: phoneNumber.replace(/\s/g, ''),
-          UserName: userName.trim(),
-          Stations: selectedStation,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
 
-      const stationName =
-        stations.find((s) => s.id === Number(selectedStation))?.StationName ||
-        selectedStation;
+      const endpoint =
+        userRole === 'Station Admin'
+          ? `http://localhost:5000/stationadmins/${user?.id}`
+          : `http://localhost:5000/dispachers/${user?.id}`;
+
+      const payload = {
+        FullName: fullName.trim(),
+        Email: email.trim().toLowerCase(),
+        PhoneNumber: phoneStr,
+        UserName: userName.trim(),
+      };
+
+      if (userRole === 'Station Admin') {
+        (payload as any).Stations = selectedStation;
+      } else {
+        (payload as any).Routes = selectedRoute;
+      }
+
+      const res = await axios.put(endpoint, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       message.success({
-        content: res.data.message || '✅ Station Admin updated successfully!',
+        content: res.data.message || `✅ ${userRole} updated successfully!`,
         duration: 3,
         icon: <FaCheckCircle style={{ color: '#52c41a' }} />,
       });
 
-      onUpdated({
-        ...StationAdmin!,
+      const updatedUser: User = {
+        id: user!.id,
         FullName: fullName.trim(),
         Email: email.trim().toLowerCase(),
-        PhoneNumber: phoneNumber.replace(/\s/g, ''),
+        PhoneNumber: phoneStr,
         UserName: userName.trim(),
-        Stations: stationName,
-      });
+        Role: userRole,
+        isActive: user!.isActive,
+      };
 
+      if (userRole === 'Station Admin') {
+        updatedUser.Stations = selectedStation;
+      } else {
+        updatedUser.Routes = selectedRoute;
+      }
+
+      onUpdated(updatedUser);
       handleCancel();
     } catch (err: any) {
       console.error(err);
       const errorMessage =
-        err.response?.data?.message || 'Failed to update station admin';
+        err.response?.data?.message || `Failed to update ${userRole}`;
       message.error({
         content:
           errorMessage.includes('Duplicate') ||
@@ -350,6 +464,7 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
       setPhoneNumber('');
       setUserName('');
       setSelectedStation('');
+      setSelectedRoute('');
       setIsUsernameAvailable(null);
       form.resetFields();
 
@@ -368,15 +483,37 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
     };
   }, []);
 
-  const stationOptions = stations.map((station) => ({
-    label: (
-      <Space>
-        <FaBuilding style={{ color: '#722ed1' }} />
-        <Text style={{ fontSize: '13px' }}>{station.StationName}</Text>
-      </Space>
-    ),
-    value: station.StationName,
-  }));
+  const formatPhoneNumber = (value: string) => {
+    const cleaned = value.replace(/[^\d+]/g, '');
+
+    if (cleaned.startsWith('09') && cleaned.length <= 10) {
+      return cleaned;
+    } else if (cleaned.startsWith('+2519') && cleaned.length <= 13) {
+      return cleaned;
+    } else if (cleaned.startsWith('2519') && cleaned.length <= 12) {
+      return `+${cleaned}`;
+    } else if (cleaned.startsWith('9') && cleaned.length <= 9) {
+      return `0${cleaned}`;
+    }
+
+    return cleaned;
+  };
+
+  const getRoleColor = () => {
+    return userRole === 'Station Admin' ? '#722ed1' : '#1890ff';
+  };
+
+  const getRoleIcon = () => {
+    return userRole === 'Station Admin' ? (
+      <MdAdminPanelSettings size={16} color="#fff" />
+    ) : (
+      <FaUserEdit size={16} color="#fff" />
+    );
+  };
+
+  const getRoleTitle = () => {
+    return userRole === 'Station Admin' ? 'Station Admin' : 'Dispatcher';
+  };
 
   const getUsernameValidationStatus = () => {
     if (!userName) return '';
@@ -392,14 +529,48 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
     if (userName.trim().length < 3) return 'Minimum 3 characters';
     if (checkingUsername) return 'Checking availability...';
     if (
-      originalAdmin &&
-      userName.trim().toLowerCase() === originalAdmin.UserName.toLowerCase()
+      originalData &&
+      userName.trim().toLowerCase() === originalData.UserName.toLowerCase()
     ) {
       return 'Current username (no change)';
     }
     if (isUsernameAvailable === false) return 'Username already taken';
     if (isUsernameAvailable === true) return 'Username is available';
     return 'Username must be at least 3 characters';
+  };
+
+  const stationOptions = stations.map((station) => ({
+    label: (
+      <Space>
+        <FaBuilding style={{ color: '#722ed1', fontSize: '12px' }} />
+        <Text style={{ fontSize: '13px' }}>{station.StationName}</Text>
+      </Space>
+    ),
+    value: station.StationName,
+  }));
+
+  const routeOptions = routes.map((route) => ({
+    label: (
+      <Space>
+        <FaRoute style={{ color: '#1890ff', fontSize: '12px' }} />
+        <Text style={{ fontSize: '13px' }}>
+          {route.station_name} → {route.EndTerminal}
+        </Text>
+      </Space>
+    ),
+    value: `${route.station_name} → ${route.EndTerminal}`,
+  }));
+
+  const getOriginalField = (
+    field: 'FullName' | 'Email' | 'PhoneNumber' | 'UserName' | 'assignment'
+  ) => {
+    if (!originalData) return '';
+    if (field === 'assignment') {
+      return userRole === 'Station Admin'
+        ? originalData.Stations || ''
+        : originalData.Routes || '';
+    }
+    return originalData[field];
   };
 
   return (
@@ -414,7 +585,7 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
         <Space align="center">
           <div
             style={{
-              backgroundColor: '#722ed1',
+              backgroundColor: getRoleColor(),
               borderRadius: '8px',
               padding: '8px',
               display: 'flex',
@@ -422,49 +593,60 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
               justifyContent: 'center',
             }}
           >
-            <FaUserShield size={18} color="#fff" />
+            {getRoleIcon()}
           </div>
-          <Title level={4} style={{ margin: 0 }}>
-            Edit Station Admin
+          <Title level={4} style={{ margin: 0, fontSize: '18px' }}>
+            Edit {getRoleTitle()}
           </Title>
-          {StationAdmin && (
-            <Tag color="purple" style={{ marginLeft: 8, fontSize: '11px' }}>
-              ID: {StationAdmin.id}
+          {user && (
+            <Tag
+              color={userRole === 'Station Admin' ? 'purple' : 'blue'}
+              style={{ marginLeft: 8, fontSize: '11px' }}
+            >
+              ID: {user.id}
             </Tag>
           )}
         </Space>
       }
       styles={{
-        body: { padding: '16px 0' },
-        header: { borderBottom: '1px solid #f0f0f0', padding: '16px 24px' },
-        content: { maxHeight: 'calc(100vh - 100px)', overflowY: 'auto' },
+        body: { padding: '12px 0' },
+        header: {
+          borderBottom: '1px solid #f0f0f0',
+          padding: '12px 20px',
+          marginBottom: 0,
+        },
+        content: {
+          maxHeight: 'calc(100vh - 100px)',
+          overflowY: 'auto',
+          padding: '0 20px',
+        },
       }}
     >
       <Form form={form} layout="vertical" style={{ maxWidth: '100%' }}>
         <Alert
-          message="Update Station Admin Information"
+          message={`Update ${getRoleTitle()} Information`}
           description={
-            StationAdmin
-              ? `Editing ${StationAdmin.FullName}'s details`
-              : 'Loading admin information...'
+            user
+              ? `Editing ${user.FullName}'s details`
+              : 'Loading user information...'
           }
           type="info"
           showIcon
           icon={<FaExclamationCircle />}
           style={{
-            marginBottom: 20,
+            marginBottom: 16,
             borderRadius: '6px',
             fontSize: '13px',
           }}
         />
 
-        <Row gutter={[20, 16]}>
+        <Row gutter={[16, 12]}>
           <Col xs={24} md={12}>
             <Card
               title={
                 <Space>
-                  <FaUser style={{ color: '#722ed1', fontSize: '14px' }} />
-                  <Text strong style={{ fontSize: '14px' }}>
+                  <FaUser style={{ color: getRoleColor(), fontSize: '13px' }} />
+                  <Text strong style={{ fontSize: '13px' }}>
                     Personal Details
                   </Text>
                   {hasChanges() && (
@@ -482,26 +664,30 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
                 borderColor: '#e8e8e8',
                 height: '100%',
               }}
-              bodyStyle={{ padding: '16px' }}
+              bodyStyle={{ padding: '12px' }}
               headStyle={{
-                padding: '0 16px',
+                padding: '0 12px',
                 minHeight: 'auto',
-                lineHeight: '40px',
+                lineHeight: '32px',
               }}
             >
               <Form.Item
                 label={
                   <Space size={4}>
                     <FaUser
-                      size={11}
-                      style={{ color: '#722ed1', fontSize: '14px' }}
+                      size={10}
+                      style={{ color: getRoleColor(), fontSize: '12px' }}
                     />
-                    <Text strong style={{ fontSize: '13px' }}>
+                    <Text strong style={{ fontSize: '12px' }}>
                       Full Name
                     </Text>
                     <Tag
                       color="red"
-                      style={{ fontSize: '9px', padding: '0 4px' }}
+                      style={{
+                        fontSize: '8px',
+                        padding: '0 3px',
+                        height: '16px',
+                      }}
                     >
                       Required
                     </Tag>
@@ -517,14 +703,14 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
                     : ''
                 }
                 help={
-                  <div style={{ fontSize: '12px' }}>
+                  <div style={{ fontSize: '11px', marginTop: 2 }}>
                     {fullName
                       ? !/^[A-Za-z\s'-]+$/.test(fullName.trim())
                         ? 'Only letters, spaces, apostrophes, and hyphens'
                         : fullName.trim().length < 2
-                        ? 'Minimum 2 characters'
-                        : ''
-                      : "Admin's full name"}
+                          ? 'Minimum 2 characters'
+                          : ''
+                      : "User's full name"}
                   </div>
                 }
               >
@@ -554,9 +740,13 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
                   }}
                   size="middle"
                   prefix={
-                    <FaUser style={{ color: '#bfbfbf', fontSize: '12px' }} />
+                    <FaUser style={{ color: '#bfbfbf', fontSize: '11px' }} />
                   }
-                  style={{ borderRadius: '5px', fontSize: '13px' }}
+                  style={{
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    padding: '4px 11px',
+                  }}
                   allowClear
                   maxLength={50}
                 />
@@ -566,15 +756,19 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
                 label={
                   <Space size={4}>
                     <FaEnvelope
-                      size={11}
-                      style={{ color: '#722ed1', fontSize: '14px' }}
+                      size={10}
+                      style={{ color: getRoleColor(), fontSize: '12px' }}
                     />
-                    <Text strong style={{ fontSize: '13px' }}>
+                    <Text strong style={{ fontSize: '12px' }}>
                       Email Address
                     </Text>
                     <Tag
                       color="red"
-                      style={{ fontSize: '9px', padding: '0 4px' }}
+                      style={{
+                        fontSize: '8px',
+                        padding: '0 3px',
+                        height: '16px',
+                      }}
                     >
                       Required
                     </Tag>
@@ -589,7 +783,7 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
                     : ''
                 }
                 help={
-                  <div style={{ fontSize: '12px' }}>
+                  <div style={{ fontSize: '11px', marginTop: 2 }}>
                     {email
                       ? !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
                         ? 'Invalid email format'
@@ -605,10 +799,14 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
                   size="middle"
                   prefix={
                     <FaEnvelope
-                      style={{ color: '#bfbfbf', fontSize: '12px' }}
+                      style={{ color: '#bfbfbf', fontSize: '11px' }}
                     />
                   }
-                  style={{ borderRadius: '5px', fontSize: '13px' }}
+                  style={{
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    padding: '4px 11px',
+                  }}
                   allowClear
                 />
               </Form.Item>
@@ -617,15 +815,19 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
                 label={
                   <Space size={4}>
                     <FaPhoneAlt
-                      size={11}
-                      style={{ color: '#722ed1', fontSize: '14px' }}
+                      size={10}
+                      style={{ color: getRoleColor(), fontSize: '12px' }}
                     />
-                    <Text strong style={{ fontSize: '13px' }}>
+                    <Text strong style={{ fontSize: '12px' }}>
                       Phone Number
                     </Text>
                     <Tag
                       color="red"
-                      style={{ fontSize: '9px', padding: '0 4px' }}
+                      style={{
+                        fontSize: '8px',
+                        padding: '0 3px',
+                        height: '16px',
+                      }}
                     >
                       Required
                     </Tag>
@@ -641,7 +843,7 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
                     : ''
                 }
                 help={
-                  <div style={{ fontSize: '12px' }}>
+                  <div style={{ fontSize: '11px', marginTop: 2 }}>
                     {phoneNumber
                       ? !/^09\d{8}$/.test(phoneNumber.replace(/\s/g, '')) &&
                         !/^\+2519\d{9}$/.test(phoneNumber.replace(/\s/g, ''))
@@ -652,20 +854,27 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
                 }
               >
                 <Input
-                  placeholder="0912345678 or +251912345678"
+                  placeholder={
+                    userRole === 'Station Admin'
+                      ? '0912345678 or +251912345678'
+                      : '0912345678'
+                  }
                   value={phoneNumber}
                   onChange={(e) => {
-                    const raw = e.target.value.replace(/\s/g, '');
-                    const cleaned = raw.replace(/[^0-9+]/g, '');
-                    setPhoneNumber(cleaned);
+                    const formatted = formatPhoneNumber(e.target.value);
+                    setPhoneNumber(formatted);
                   }}
                   size="middle"
                   prefix={
                     <FaPhoneAlt
-                      style={{ color: '#bfbfbf', fontSize: '12px' }}
+                      style={{ color: '#bfbfbf', fontSize: '11px' }}
                     />
                   }
-                  style={{ borderRadius: '5px', fontSize: '13px' }}
+                  style={{
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    padding: '4px 11px',
+                  }}
                   allowClear
                 />
               </Form.Item>
@@ -676,11 +885,18 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
             <Card
               title={
                 <Space>
-                  <FaUserShield
-                    style={{ color: '#722ed1', fontSize: '14px' }}
-                  />
-                  <Text strong style={{ fontSize: '14px' }}>
-                    Account & Station
+                  {userRole === 'Station Admin' ? (
+                    <FaUserShield
+                      style={{ color: getRoleColor(), fontSize: '13px' }}
+                    />
+                  ) : (
+                    <MdDriveFileRenameOutline
+                      style={{ color: getRoleColor(), fontSize: '13px' }}
+                    />
+                  )}
+                  <Text strong style={{ fontSize: '13px' }}>
+                    Account &{' '}
+                    {userRole === 'Station Admin' ? 'Station' : 'Route'}
                   </Text>
                 </Space>
               }
@@ -688,28 +904,31 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
               style={{
                 borderColor: '#e8e8e8',
                 height: '100%',
-                marginBottom: 0,
               }}
-              bodyStyle={{ padding: '16px' }}
+              bodyStyle={{ padding: '12px' }}
               headStyle={{
-                padding: '0 16px',
+                padding: '0 12px',
                 minHeight: 'auto',
-                lineHeight: '40px',
+                lineHeight: '32px',
               }}
             >
               <Form.Item
                 label={
                   <Space size={4}>
                     <FaUser
-                      size={11}
-                      style={{ color: '#722ed1', fontSize: '14px' }}
+                      size={10}
+                      style={{ color: getRoleColor(), fontSize: '12px' }}
                     />
-                    <Text strong style={{ fontSize: '13px' }}>
+                    <Text strong style={{ fontSize: '12px' }}>
                       Username
                     </Text>
                     <Tag
                       color="red"
-                      style={{ fontSize: '9px', padding: '0 4px' }}
+                      style={{
+                        fontSize: '8px',
+                        padding: '0 3px',
+                        height: '16px',
+                      }}
                     >
                       Required
                     </Tag>
@@ -718,18 +937,19 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
                 required={false}
                 validateStatus={getUsernameValidationStatus()}
                 help={
-                  <div style={{ fontSize: '12px' }}>
+                  <div style={{ fontSize: '11px', marginTop: 2 }}>
                     {getUsernameHelpText()}
                     {isUsernameAvailable === true &&
-                      originalAdmin &&
+                      originalData &&
                       userName.trim().toLowerCase() !==
-                        originalAdmin.UserName.toLowerCase() && (
+                        originalData.UserName.toLowerCase() && (
                         <Tag
                           color="green"
                           style={{
-                            marginLeft: 8,
-                            fontSize: '10px',
-                            padding: '0 4px',
+                            marginLeft: 6,
+                            fontSize: '9px',
+                            padding: '0 3px',
+                            height: '16px',
                           }}
                         >
                           Available
@@ -739,23 +959,25 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
                       <Tag
                         color="red"
                         style={{
-                          marginLeft: 8,
-                          fontSize: '10px',
-                          padding: '0 4px',
+                          marginLeft: 6,
+                          fontSize: '9px',
+                          padding: '0 3px',
+                          height: '16px',
                         }}
                       >
                         Taken
                       </Tag>
                     )}
-                    {originalAdmin &&
+                    {originalData &&
                       userName.trim().toLowerCase() ===
-                        originalAdmin.UserName.toLowerCase() && (
+                        originalData.UserName.toLowerCase() && (
                         <Tag
                           color="blue"
                           style={{
-                            marginLeft: 8,
-                            fontSize: '10px',
-                            padding: '0 4px',
+                            marginLeft: 6,
+                            fontSize: '9px',
+                            padding: '0 3px',
+                            height: '16px',
                           }}
                         >
                           Current
@@ -770,79 +992,158 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
                   onChange={(e) => handleUsernameChange(e.target.value)}
                   size="middle"
                   prefix={
-                    <FaUser style={{ color: '#bfbfbf', fontSize: '12px' }} />
+                    <FaUser style={{ color: '#bfbfbf', fontSize: '11px' }} />
                   }
-                  style={{ borderRadius: '5px', fontSize: '13px' }}
+                  style={{
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    padding: '4px 11px',
+                  }}
                   allowClear
                   maxLength={30}
                   disabled={checkingUsername}
                 />
               </Form.Item>
 
-              <Form.Item
-                label={
-                  <Space size={4}>
-                    <FaBuilding
-                      size={11}
-                      style={{ color: '#722ed1', fontSize: '14px' }}
-                    />
-                    <Text strong style={{ fontSize: '13px' }}>
-                      Assigned Station
-                    </Text>
-                    <Tag
-                      color="red"
-                      style={{ fontSize: '9px', padding: '0 4px' }}
-                    >
-                      Required
-                    </Tag>
-                  </Space>
-                }
-                required={false}
-                validateStatus={selectedStation ? 'success' : ''}
-                help={
-                  <div style={{ fontSize: '12px' }}>
-                    {!selectedStation ? 'Select a station for the admin' : ''}
-                  </div>
-                }
-              >
-                <Select
-                  placeholder="Select a station for assignment"
-                  value={selectedStation}
-                  onChange={setSelectedStation}
-                  size="middle"
-                  style={{
-                    width: '100%',
-                    borderRadius: '5px',
-                    fontSize: '13px',
-                  }}
-                  dropdownStyle={{
-                    borderRadius: '5px',
-                    maxHeight: 250,
-                    overflow: 'auto',
-                  }}
-                  allowClear
-                  suffixIcon={
-                    <FaBuilding
-                      style={{ color: '#bfbfbf', fontSize: '12px' }}
-                    />
+              {userRole === 'Station Admin' ? (
+                <Form.Item
+                  label={
+                    <Space size={4}>
+                      <FaBuilding
+                        size={10}
+                        style={{ color: getRoleColor(), fontSize: '12px' }}
+                      />
+                      <Text strong style={{ fontSize: '12px' }}>
+                        Assigned Station
+                      </Text>
+                      <Tag
+                        color="red"
+                        style={{
+                          fontSize: '8px',
+                          padding: '0 3px',
+                          height: '16px',
+                        }}
+                      >
+                        Required
+                      </Tag>
+                    </Space>
                   }
-                  options={stationOptions}
-                  loading={stations.length === 0}
-                  listHeight={200}
-                  showSearch
-                  filterOption={(input, option) =>
-                    (option?.label?.props?.children?.[1]?.props?.children || '')
-                      .toLowerCase()
-                      .includes(input.toLowerCase())
+                  required={false}
+                  validateStatus={selectedStation ? 'success' : ''}
+                  help={
+                    <div style={{ fontSize: '11px', marginTop: 2 }}>
+                      {!selectedStation ? 'Select a station for the admin' : ''}
+                    </div>
                   }
-                />
-              </Form.Item>
+                >
+                  <Select
+                    placeholder="Select a station for assignment"
+                    value={selectedStation}
+                    onChange={setSelectedStation}
+                    size="middle"
+                    style={{
+                      width: '100%',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                    }}
+                    dropdownStyle={{
+                      borderRadius: '4px',
+                      maxHeight: 200,
+                      overflow: 'auto',
+                    }}
+                    allowClear
+                    suffixIcon={
+                      <FaBuilding
+                        style={{ color: '#bfbfbf', fontSize: '11px' }}
+                      />
+                    }
+                    options={stationOptions}
+                    loading={fetchingData && stations.length === 0}
+                    listHeight={180}
+                    showSearch
+                    filterOption={(input, option) =>
+                      (
+                        option?.label?.props?.children?.[1]?.props?.children ||
+                        ''
+                      )
+                        .toLowerCase()
+                        .includes(input.toLowerCase())
+                    }
+                  />
+                </Form.Item>
+              ) : (
+                <Form.Item
+                  label={
+                    <Space size={4}>
+                      <FaRoute
+                        size={10}
+                        style={{ color: getRoleColor(), fontSize: '12px' }}
+                      />
+                      <Text strong style={{ fontSize: '12px' }}>
+                        Assigned Route
+                      </Text>
+                      <Tag
+                        color="red"
+                        style={{
+                          fontSize: '8px',
+                          padding: '0 3px',
+                          height: '16px',
+                        }}
+                      >
+                        Required
+                      </Tag>
+                    </Space>
+                  }
+                  required={false}
+                  validateStatus={selectedRoute ? 'success' : ''}
+                  help={
+                    <div style={{ fontSize: '11px', marginTop: 2 }}>
+                      {!selectedRoute
+                        ? 'Select a route for the dispatcher'
+                        : ''}
+                    </div>
+                  }
+                >
+                  <Select
+                    placeholder="Select a route for assignment"
+                    value={selectedRoute}
+                    onChange={setSelectedRoute}
+                    size="middle"
+                    style={{
+                      width: '100%',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                    }}
+                    dropdownStyle={{
+                      borderRadius: '4px',
+                      maxHeight: 200,
+                      overflow: 'auto',
+                    }}
+                    allowClear
+                    suffixIcon={
+                      <FaRoute style={{ color: '#bfbfbf', fontSize: '11px' }} />
+                    }
+                    options={routeOptions}
+                    loading={fetchingData && routes.length === 0}
+                    listHeight={180}
+                    showSearch
+                    filterOption={(input, option) =>
+                      (
+                        option?.label?.props?.children?.[1]?.props?.children ||
+                        ''
+                      )
+                        .toLowerCase()
+                        .includes(input.toLowerCase())
+                    }
+                  />
+                </Form.Item>
+              )}
 
-              {hasChanges() && originalAdmin && (
+              {hasChanges() && originalData && (
                 <Card
                   size="small"
                   style={{
-                    marginBottom: 16,
+                    marginBottom: 12,
                     borderColor: '#d6e4ff',
                     backgroundColor: '#f0f7ff',
                   }}
@@ -850,14 +1151,14 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
                 >
                   <Space
                     direction="vertical"
-                    size={6}
+                    size={4}
                     style={{ width: '100%' }}
                   >
                     <Text strong style={{ color: '#1890ff', fontSize: '12px' }}>
                       Changes Summary
                     </Text>
 
-                    {fullName !== originalAdmin.FullName && (
+                    {fullName !== getOriginalField('FullName') && (
                       <div>
                         <Text
                           type="secondary"
@@ -873,7 +1174,7 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
                             marginRight: 4,
                           }}
                         >
-                          {originalAdmin.FullName}
+                          {getOriginalField('FullName')}
                         </Text>
                         <Text style={{ fontSize: '11px', color: '#52c41a' }}>
                           → {fullName}
@@ -881,7 +1182,7 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
                       </div>
                     )}
 
-                    {phoneNumber !== originalAdmin.PhoneNumber && (
+                    {phoneNumber !== getOriginalField('PhoneNumber') && (
                       <div>
                         <Text
                           type="secondary"
@@ -897,7 +1198,7 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
                             marginRight: 4,
                           }}
                         >
-                          {originalAdmin.PhoneNumber}
+                          {getOriginalField('PhoneNumber')}
                         </Text>
                         <Text style={{ fontSize: '11px', color: '#52c41a' }}>
                           → {phoneNumber}
@@ -905,7 +1206,7 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
                       </div>
                     )}
 
-                    {userName !== originalAdmin.UserName && (
+                    {userName !== getOriginalField('UserName') && (
                       <div>
                         <Text
                           type="secondary"
@@ -921,7 +1222,7 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
                             marginRight: 4,
                           }}
                         >
-                          {originalAdmin.UserName}
+                          {getOriginalField('UserName')}
                         </Text>
                         <Text style={{ fontSize: '11px', color: '#52c41a' }}>
                           → {userName}
@@ -929,29 +1230,55 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
                       </div>
                     )}
 
-                    {selectedStation !== originalAdmin.Stations && (
-                      <div>
-                        <Text
-                          type="secondary"
-                          style={{ fontSize: '11px', marginRight: 4 }}
-                        >
-                          Station:
-                        </Text>
-                        <Text
-                          style={{
-                            fontSize: '11px',
-                            textDecoration: 'line-through',
-                            color: '#ff4d4f',
-                            marginRight: 4,
-                          }}
-                        >
-                          {originalAdmin.Stations}
-                        </Text>
-                        <Text style={{ fontSize: '11px', color: '#52c41a' }}>
-                          → {selectedStation}
-                        </Text>
-                      </div>
-                    )}
+                    {userRole === 'Station Admin' &&
+                      selectedStation !== getOriginalField('assignment') && (
+                        <div>
+                          <Text
+                            type="secondary"
+                            style={{ fontSize: '11px', marginRight: 4 }}
+                          >
+                            Station:
+                          </Text>
+                          <Text
+                            style={{
+                              fontSize: '11px',
+                              textDecoration: 'line-through',
+                              color: '#ff4d4f',
+                              marginRight: 4,
+                            }}
+                          >
+                            {getOriginalField('assignment')}
+                          </Text>
+                          <Text style={{ fontSize: '11px', color: '#52c41a' }}>
+                            → {selectedStation}
+                          </Text>
+                        </div>
+                      )}
+
+                    {userRole === 'Dispatcher' &&
+                      selectedRoute !== getOriginalField('assignment') && (
+                        <div>
+                          <Text
+                            type="secondary"
+                            style={{ fontSize: '11px', marginRight: 4 }}
+                          >
+                            Route:
+                          </Text>
+                          <Text
+                            style={{
+                              fontSize: '11px',
+                              textDecoration: 'line-through',
+                              color: '#ff4d4f',
+                              marginRight: 4,
+                            }}
+                          >
+                            {getOriginalField('assignment')}
+                          </Text>
+                          <Text style={{ fontSize: '11px', color: '#52c41a' }}>
+                            → {selectedRoute}
+                          </Text>
+                        </div>
+                      )}
                   </Space>
                 </Card>
               )}
@@ -960,34 +1287,44 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
                 <Alert
                   message="Ready to Update"
                   description={
-                    <div style={{ fontSize: '12px' }}>
-                      <div>
+                    <div style={{ fontSize: '11px' }}>
+                      <div style={{ marginBottom: 2 }}>
                         <strong>Name:</strong> {fullName}
                       </div>
-                      <div>
+                      <div style={{ marginBottom: 2 }}>
                         <strong>Username:</strong> {userName}
-                        {originalAdmin &&
+                        {originalData &&
                           userName.trim().toLowerCase() !==
-                            originalAdmin.UserName.toLowerCase() && (
+                            originalData.UserName.toLowerCase() && (
                             <Tag
                               color="green"
-                              style={{ marginLeft: 4, fontSize: '10px' }}
+                              style={{
+                                marginLeft: 4,
+                                fontSize: '9px',
+                                padding: '0 3px',
+                                height: '16px',
+                              }}
                             >
                               ✓
                             </Tag>
                           )}
                       </div>
                       <div>
-                        <strong>Station:</strong> {selectedStation}
+                        <strong>
+                          {userRole === 'Station Admin' ? 'Station' : 'Route'}:
+                        </strong>{' '}
+                        {userRole === 'Station Admin'
+                          ? selectedStation
+                          : selectedRoute}
                       </div>
                     </div>
                   }
                   type="success"
                   showIcon
                   style={{
-                    marginBottom: 16,
-                    borderRadius: '5px',
-                    fontSize: '12px',
+                    marginBottom: 12,
+                    borderRadius: '4px',
+                    fontSize: '11px',
                   }}
                 />
               )}
@@ -995,7 +1332,7 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
               <div
                 style={{
                   marginTop: 16,
-                  paddingTop: 16,
+                  paddingTop: 12,
                   borderTop: '1px solid #f0f0f0',
                 }}
               >
@@ -1004,9 +1341,10 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
                     onClick={handleCancel}
                     size="middle"
                     style={{
-                      borderRadius: '5px',
-                      padding: '0 20px',
-                      fontSize: '13px',
+                      borderRadius: '4px',
+                      padding: '0 16px',
+                      fontSize: '12px',
+                      height: '32px',
                     }}
                   >
                     Cancel
@@ -1019,24 +1357,35 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
                     size="middle"
                     disabled={!isFormValid || !hasChanges()}
                     style={{
-                      borderRadius: '5px',
-                      padding: '0 24px',
-                      fontSize: '13px',
+                      borderRadius: '4px',
+                      padding: '0 20px',
+                      fontSize: '12px',
+                      height: '32px',
                       background:
-                        isFormValid && hasChanges() ? '#722ed1' : '#d9d9d9',
+                        isFormValid && hasChanges()
+                          ? getRoleColor()
+                          : '#d9d9d9',
                       borderColor:
-                        isFormValid && hasChanges() ? '#722ed1' : '#d9d9d9',
+                        isFormValid && hasChanges()
+                          ? getRoleColor()
+                          : '#d9d9d9',
                     }}
-                    icon={<FaUserShield style={{ fontSize: '12px' }} />}
+                    icon={
+                      userRole === 'Station Admin' ? (
+                        <FaUserShield style={{ fontSize: '11px' }} />
+                      ) : (
+                        <FaUserEdit style={{ fontSize: '11px' }} />
+                      )
+                    }
                   >
                     {loading ? 'Updating...' : 'Update'}
                   </Button>
                 </Space>
 
-                <div style={{ marginTop: 12 }}>
-                  <Text type="secondary" style={{ fontSize: '11px' }}>
+                <div style={{ marginTop: 8 }}>
+                  <Text type="secondary" style={{ fontSize: '10px' }}>
                     <FaExclamationCircle
-                      style={{ marginRight: '4px', fontSize: '10px' }}
+                      style={{ marginRight: '3px', fontSize: '9px' }}
                     />
                     Username must be unique
                   </Text>
@@ -1050,4 +1399,4 @@ const EditStationModal: React.FC<EditStationAdminModalProps> = ({
   );
 };
 
-export default EditStationModal;
+export default EditUserModal;

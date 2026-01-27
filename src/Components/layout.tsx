@@ -75,12 +75,20 @@ export default function Layouts({ role }: LayoutsProps) {
         path: '/admin/Stations',
         color: 'bg-gradient-to-r from-gray-200 to-gray-600',
       },
+      // {
+      //   key: 'StationAdmins',
+      //   icon: <GrUserAdmin />,
+      //   label: 'Station Admins',
+      //   path: '/admin/StationAdmins',
+      //   color: 'bg-gradient-to-r from-[#ad4e00] to-[#803800]',
+      // },
+
       {
-        key: 'StationAdmins',
-        icon: <GrUserAdmin />,
-        label: 'Station Admins',
-        path: '/admin/StationAdmins',
-        color: 'bg-gradient-to-r from-[#ad4e00] to-[#803800]',
+        key: 'allUsers',
+        icon: <FaUsers />,
+        label: 'All Users',
+        path: '/admin/allUsers',
+        color: 'bg-gradient-to-r from-gray-600 to-gray-700',
       },
       {
         key: 'TaxiDrivers',
@@ -88,13 +96,6 @@ export default function Layouts({ role }: LayoutsProps) {
         label: 'TaxiDrivers',
         path: '/admin/TaxiDrivers',
         color: 'bg-gradient-to-r from-orange-500 to-amber-600',
-      },
-      {
-        key: 'allUsers',
-        icon: <FaUsers />,
-        label: 'All Users',
-        path: '/admin/allUsers',
-        color: 'bg-gradient-to-r from-gray-600 to-gray-700',
       },
       {
         key: 'Reports',
